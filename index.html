@@ -204,7 +204,6 @@
                   <p class="eyebrow">Envio manual</p>
                   <h3>Nova cobrança</h3>
                 </div>
-                <button id="emailTestButton" class="ghost-button" type="button">Email teste</button>
               </div>
               <form id="chargeForm" class="form-stack">
                 <label>
@@ -223,7 +222,7 @@
                   Mensagem
                   <textarea id="messageInput" rows="7"></textarea>
                 </label>
-                <button type="submit">Simular envio</button>
+                <button type="submit">Enviar cobrança</button>
               </form>
             </article>
 
@@ -391,36 +390,6 @@
         </section>
       </section>
     </main>
-
-    <div id="emailTestModal" class="modal-backdrop is-hidden" aria-hidden="true">
-      <section class="modal-window" role="dialog" aria-modal="true" aria-labelledby="emailTestTitle">
-        <button id="closeEmailTestModal" class="modal-close" type="button" aria-label="Fechar janela">x</button>
-        <div class="modal-header">
-          <p class="eyebrow">Teste real de e-mail</p>
-          <h3 id="emailTestTitle">Email teste</h3>
-        </div>
-
-        <form id="emailTestForm" class="form-stack">
-          <label>
-            Condômino
-            <select id="emailTestResidentSelect"></select>
-          </label>
-          <label>
-            E-mail de destino
-            <input id="emailTestRecipient" type="email" placeholder="destino@email.com" required />
-          </label>
-          <label>
-            Assunto
-            <input id="emailTestSubject" type="text" required />
-          </label>
-          <label>
-            Mensagem
-            <textarea id="emailTestMessage" rows="7" required></textarea>
-          </label>
-          <button type="submit">Enviar email teste</button>
-        </form>
-      </section>
-    </div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

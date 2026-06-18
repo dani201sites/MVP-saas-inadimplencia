@@ -37,3 +37,17 @@ Estruturei este banco com base no frontend publicado em `https://sistema-de-inad
 - Não tratei o sistema como multi-tenant SaaS.
 - O histórico de cobrança fica em `billing_records` e `message_logs`, o que já permite evoluir depois sem refazer tudo.
 - O fluxo de caixa aceita linhas globais do portfólio e, se quisermos depois, linhas por condomínio.
+
+## Status atual do banco
+
+O banco foi zerado para permitir cadastrar a demonstracao do zero pelo painel publicado.
+
+Tabelas zeradas:
+
+- `condominiums`
+- `residents`
+- `billing_records`
+- `message_logs`
+- `cashflow_monthly`
+
+A tabela `message_agents` foi mantida com os canais do MVP para o frontend continuar exibindo WhatsApp, e-mail e SMS.

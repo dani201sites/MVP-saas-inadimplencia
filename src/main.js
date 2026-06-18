@@ -306,16 +306,12 @@ function renderAgentConfig() {
 }
 
 function renderResidentSelect() {
-  const overdue = state.residents.filter((resident) => resident.status === "overdue");
-
-  const options = overdue
+  const options = state.residents
     .map((resident) => `<option value="${resident.id}">${escapeHtml(resident.name)} - ${escapeHtml(resident.unit)}</option>`)
     .join("");
 
   $("#residentSelect").innerHTML = options;
-  $("#emailTestResidentSelect").innerHTML = options;
   updateMessagePreview();
-  updateEmailTestPreview();
 }
 
 function updateMessagePreview() {
@@ -327,16 +323,6 @@ function updateMessagePreview() {
   $("#messageInput").value = `Olá, ${resident.name}. Identificamos uma pendência de ${currency.format(fromCents(resident.amountCents))} referente à unidade ${resident.unit} do ${getCondoName(resident.condoId)}. Podemos te ajudar com a regularização?`;
 }
 
-function updateEmailTestPreview() {
-  const resident = getResidentById($("#emailTestResidentSelect").value);
-
-  if (!resident) return;
-
-  $("#emailTestRecipient").value = resident.email || "";
-  $("#emailTestSubject").value = `[TESTE] Cobrança da unidade ${resident.unit}`;
-  $("#emailTestMessage").value = `Olá, ${resident.name}. Este é um email teste de cobrança referente à unidade ${resident.unit} do ${getCondoName(resident.condoId)}. Identificamos uma pendência de ${currency.format(fromCents(resident.amountCents))}.`;
-}
-
 function renderMessages() {
   $("#messageHistory").innerHTML = state.messages
     .map(
@@ -344,10 +330,7 @@ function renderMessages() {
         <div class="history-item">
           <div class="history-top">
             <strong>${escapeHtml(message.resident)}</strong>
-            <div class="history-tags">
-              <span class="pill">${escapeHtml(getChannelLabel(message.channel))}</span>
-              ${message.isTest ? `<span class="pill warning">teste</span>` : ""}
-            </div>
+            <span class="pill">${escapeHtml(getChannelLabel(message.channel))}</span>
           </div>
           ${message.subject ? `<small class="history-subject">${escapeHtml(message.subject)}</small>` : ""}
           <p>${escapeHtml(message.text)}</p>
@@ -451,18 +434,6 @@ function setView(viewName) {
   $("#viewTitle").textContent = views[viewName];
 }
 
-function openEmailTestModal() {
-  updateEmailTestPreview();
-  $("#emailTestModal").classList.remove("is-hidden");
-  $("#emailTestModal").setAttribute("aria-hidden", "false");
-  $("#emailTestRecipient").focus();
-}
-
-function closeEmailTestModal() {
-  $("#emailTestModal").classList.add("is-hidden");
-  $("#emailTestModal").setAttribute("aria-hidden", "true");
-}
-
 $("#loginForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const button = event.currentTarget.querySelector("button[type='submit']");
@@ -508,17 +479,14 @@ $("#agentChannel").addEventListener("change", (event) => {
 });
 
 $("#residentSelect").addEventListener("change", updateMessagePreview);
-$("#emailTestButton").addEventListener("click", openEmailTestModal);
-$("#closeEmailTestModal").addEventListener("click", closeEmailTestModal);
-$("#emailTestModal").addEventListener("click", (event) => {
-  if (event.target === event.currentTarget) {
-    closeEmailTestModal();
-  }
-});
-$("#emailTestResidentSelect").addEventListener("change", updateEmailTestPreview);
 
 $("#chargeForm").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const button = event.currentTarget.querySelector("button[type='submit']");
+  const previousLabel = button.textContent;
+
+  button.disabled = true;
+  button.textContent = "Enviando...";
 
   try {
     await requestJson("/api/messages", {
@@ -531,34 +499,7 @@ $("#chargeForm").addEventListener("submit", async (event) => {
     });
 
     await loadAppData({ silent: true });
-    setNotice("Cobrança registrada no histórico com sucesso.", "success");
-  } catch (error) {
-    setNotice(error.message, "error");
-  }
-});
-
-$("#emailTestForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const button = event.currentTarget.querySelector("button[type='submit']");
-  const previousLabel = button.textContent;
-
-  button.disabled = true;
-  button.textContent = "Enviando...";
-
-  try {
-    await requestJson("/api/test-email", {
-      method: "POST",
-      body: JSON.stringify({
-        residentId: $("#emailTestResidentSelect").value,
-        to: $("#emailTestRecipient").value.trim(),
-        subject: $("#emailTestSubject").value.trim(),
-        message: $("#emailTestMessage").value.trim(),
-      }),
-    });
-
-    await loadAppData({ silent: true });
-    closeEmailTestModal();
-    setNotice("Email teste enviado e registrado no histórico.", "success");
+    setNotice("Cobrança por e-mail enviada e registrada no histórico.", "success");
   } catch (error) {
     setNotice(error.message, "error");
   } finally {

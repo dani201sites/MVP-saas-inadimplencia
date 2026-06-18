@@ -74,7 +74,7 @@ Ou seja:
 
 O projeto saiu da fase puramente conceitual e entrou na fase de estruturacao do frontend do MVP.
 
-Ja existe uma primeira demonstracao visual com:
+Ja existe uma primeira demonstracao funcional publicada com:
 
 - login simples
 - dashboard
@@ -85,8 +85,17 @@ Ja existe uma primeira demonstracao visual com:
 - historico de mensagens
 - fluxo de caixa simples
 - estrutura pronta para deploy simples na `Vercel`
+- persistencia no `Neon Postgres` via endpoints serverless em `api/`
 
-As integracoes reais com WhatsApp, e-mail, SMS e automacoes ainda nao fazem parte desta etapa inicial. O banco de dados do MVP agora esta preparado no `Neon Postgres` para persistir dados da demonstracao.
+As integracoes reais com WhatsApp, e-mail, SMS e automacoes ainda nao fazem parte desta etapa inicial. O banco de dados do MVP esta preparado no `Neon Postgres` para persistir dados da demonstracao.
+
+Status validado:
+
+- app publicado na `Vercel` carregando `/api/bootstrap` com status `200`
+- login visual entrando no painel depois da correcao de renderizacao do frontend
+- banco de dados zerado para novo cadastro manual da demonstracao
+- tabelas operacionais sem dados iniciais: `condominiums`, `residents`, `billing_records`, `message_logs` e `cashflow_monthly`
+- agentes de canal mantidos em `message_agents` para preservar WhatsApp, e-mail e SMS no painel
 
 ## Próximos passos
 
@@ -99,29 +108,60 @@ As integracoes reais com WhatsApp, e-mail, SMS e automacoes ainda nao fazem part
 - funcionalidades do MVP
 - decisões técnicas
 
-## Deploy do frontend
+## Deploy e conexao com Neon
 
-O frontend agora está organizado para deploy simples na `Vercel`, com:
+O MVP esta organizado para deploy na `Vercel`, usando `Vite` no frontend e funcoes serverless em `api/` para conversar com o `Neon Postgres`.
 
-- `Vite`
-- `package.json` com scripts de desenvolvimento e build
+Arquivos e pastas que devem ser publicados no `GitHub`:
+
+- `api/`
+- `database/`
+- `src/`
+- `index.html`
+- `package.json`
+- `package-lock.json`
+- `vite.config.js`
 - `vercel.json`
-- `src/` com arquivos da interface
+- `.gitignore`
+- `.env.example`
+- `README.md`
+- `PROJECT_CONTEXT.md`
+- `SPEC.md`
 
-Fluxo esperado de publicacao:
+Arquivos e pastas que nao devem ser publicados:
 
-- subir o projeto no `GitHub`
-- importar o repositorio na `Vercel`
-- executar o build padrao `npm run build`
+- `.env`
+- `.env.local`
+- `node_modules/`
+- `dist/`
+- `.vercel/`
+- `.DS_Store`
+
+Configuracao obrigatoria na `Vercel`:
+
+- criar a variavel de ambiente `DATABASE_URL`
+- usar a connection string real do `Neon`
+- marcar pelo menos `Production`; `Preview` tambem pode ser marcado
+- fazer novo deploy depois de salvar a variavel
+
+Teste minimo depois do deploy:
+
+- abrir o app publicado
+- entrar no painel
+- confirmar nos logs da `Vercel` que `/api/bootstrap` retorna `200`
+- cadastrar um condominio ou condomino de teste
+- atualizar a pagina e confirmar que o dado continuou salvo
+
+Se o app ficar preso na tela de login, olhar primeiro os logs da funcao `/api/bootstrap` na `Vercel`.
 
 ## Proximos passos
 
 Proximos passos mais provaveis:
 
-- conectar o frontend publicado aos endpoints da `Vercel` usando `Neon Postgres`
+- cadastrar dados reais de demonstracao pelo painel publicado
 - criar tela individual por condominio
 - criar regua simples de cobranca
-- preparar publicacao do MVP na `Vercel`
+- melhorar tratamento visual para estados vazios do dashboard
 
 ## Arquivos de referencia
 
