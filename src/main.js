@@ -312,6 +312,7 @@ function renderResidentSelect() {
 
   $("#residentSelect").innerHTML = options;
   updateMessagePreview();
+  updateChargeEmailField({ shouldPrefill: true });
 }
 
 function updateMessagePreview() {
@@ -321,6 +322,27 @@ function updateMessagePreview() {
   if (!resident) return;
 
   $("#messageInput").value = `Olá, ${resident.name}. Identificamos uma pendência de ${currency.format(fromCents(resident.amountCents))} referente à unidade ${resident.unit} do ${getCondoName(resident.condoId)}. Podemos te ajudar com a regularização?`;
+  updateChargeEmailField({ shouldPrefill: true });
+}
+
+function updateChargeEmailField({ shouldPrefill = false } = {}) {
+  const channel = $("#channelSelect").value;
+  const isEmail = channel === "email";
+  const field = $("#emailRecipientField");
+  const input = $("#emailRecipientInput");
+
+  field.classList.toggle("is-hidden", !isEmail);
+  input.required = isEmail;
+
+  if (!isEmail) {
+    input.value = "";
+    return;
+  }
+
+  if (shouldPrefill || !input.value.trim()) {
+    const resident = getResidentById($("#residentSelect").value);
+    input.value = resident?.email || "";
+  }
 }
 
 function renderMessages() {
@@ -479,6 +501,7 @@ $("#agentChannel").addEventListener("change", (event) => {
 });
 
 $("#residentSelect").addEventListener("change", updateMessagePreview);
+$("#channelSelect").addEventListener("change", () => updateChargeEmailField({ shouldPrefill: true }));
 
 $("#chargeForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -494,6 +517,7 @@ $("#chargeForm").addEventListener("submit", async (event) => {
       body: JSON.stringify({
         residentId: $("#residentSelect").value,
         channel: $("#channelSelect").value,
+        emailTo: $("#emailRecipientInput").value.trim(),
         message: $("#messageInput").value,
       }),
     });

@@ -21,10 +21,6 @@ async function findResidentContext(sql, residentId) {
     throw Object.assign(new Error("Condômino não encontrado para enviar a cobrança."), { statusCode: 404 });
   }
 
-  if (!rows[0].email) {
-    throw Object.assign(new Error("Este condômino não possui e-mail cadastrado."), { statusCode: 400 });
-  }
-
   return rows[0];
 }
 
@@ -93,6 +89,7 @@ export default async function handler(req, res) {
     const body = await readJsonBody(req);
     const residentId = String(body.residentId || "").trim();
     const channel = normalizeChannel(body.channel);
+    const emailTo = String(body.emailTo || "").trim();
     const message = String(body.message || "").trim();
 
     if (channel !== "email") {
@@ -105,12 +102,22 @@ export default async function handler(req, res) {
 
     const sql = getSql();
     const resident = await findResidentContext(sql, residentId);
+    const recipientEmail = emailTo || resident.email;
+
+    if (!recipientEmail) {
+      throw Object.assign(new Error("Informe um e-mail de destino para enviar a cobrança."), { statusCode: 400 });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      throw Object.assign(new Error("Informe um e-mail de destino válido."), { statusCode: 400 });
+    }
+
     const subject = `Cobrança da unidade ${resident.unit_label}`;
     let delivery;
 
     try {
       delivery = await sendEmail({
-        to: resident.email,
+        to: recipientEmail,
         subject,
         message,
       });
