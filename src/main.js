@@ -659,18 +659,20 @@ $("#chargeForm").addEventListener("submit", async (event) => {
   button.textContent = "Enviando...";
 
   try {
-    await requestJson("/api/messages", {
+    const selectedChannel = $("#channelSelect").value;
+    const delivery = await requestJson("/api/messages", {
       method: "POST",
       body: JSON.stringify({
         residentId: $("#residentSelect").value,
-        channel: $("#channelSelect").value,
+        channel: selectedChannel,
         emailTo: $("#emailRecipientInput").value.trim(),
         message: $("#messageInput").value,
       }),
     });
 
     await loadAppData({ silent: true });
-    setNotice(`Cobrança por ${getChannelLabel($("#channelSelect").value)} enviada e registrada no histórico.`, "success");
+    const statusText = delivery.status === "queued" ? "entrou na fila da W-API" : "foi registrada";
+    setNotice(`Cobrança por ${getChannelLabel(selectedChannel)} ${statusText} no histórico.`, "success");
   } catch (error) {
     setNotice(error.message, "error");
   } finally {

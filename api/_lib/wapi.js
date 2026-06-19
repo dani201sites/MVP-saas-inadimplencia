@@ -8,7 +8,18 @@ function getWapiConfig() {
   };
 }
 
-function requireLiveWapiConfig(config) {
+export function getWapiRuntimeConfig() {
+  const config = getWapiConfig();
+
+  return {
+    mode: config.mode,
+    hasInstanceId: Boolean(config.instanceId),
+    hasToken: Boolean(config.token),
+    delaySeconds: Math.min(Math.max(config.delaySeconds || 5, 1), 15),
+  };
+}
+
+function requireWapiConfig(config) {
   if (!config.instanceId) {
     throw Object.assign(new Error("A variável WAPI_INSTANCE_ID não está configurada."), { statusCode: 500 });
   }
@@ -16,6 +27,30 @@ function requireLiveWapiConfig(config) {
   if (!config.token) {
     throw Object.assign(new Error("A variável WAPI_TOKEN não está configurada."), { statusCode: 500 });
   }
+}
+
+async function requestWapi(path, options = {}) {
+  const config = getWapiConfig();
+  requireWapiConfig(config);
+
+  const separator = path.includes("?") ? "&" : "?";
+  const response = await fetch(`${config.baseUrl}${path}${separator}instanceId=${encodeURIComponent(config.instanceId)}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok || payload?.error) {
+    const wapiMessage = payload?.message || payload?.error || "A W-API retornou erro na requisição.";
+    throw Object.assign(new Error(wapiMessage), { statusCode: 502 });
+  }
+
+  return payload;
 }
 
 export function normalizeWhatsAppRecipient(value) {
@@ -43,14 +78,8 @@ export async function sendWhatsAppText({ to, message }) {
     };
   }
 
-  requireLiveWapiConfig(config);
-
-  const response = await fetch(`${config.baseUrl}/message/send-text?instanceId=${encodeURIComponent(config.instanceId)}`, {
+  const payload = await requestWapi("/message/send-text", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({
       phone,
       message,
@@ -58,15 +87,16 @@ export async function sendWhatsAppText({ to, message }) {
     }),
   });
 
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok || payload?.error) {
-    const wapiMessage = payload?.message || payload?.error || "Não foi possível enviar a mensagem pelo WhatsApp.";
-    throw Object.assign(new Error(wapiMessage), { statusCode: 502 });
-  }
-
   return {
     status: "queued",
     externalMessageId: payload?.messageId || payload?.MessageId || payload?.insertedId || null,
   };
+}
+
+export async function getWapiInstanceStatus() {
+  return requestWapi("/instance/status-instance");
+}
+
+export async function getWapiQueue({ perPage = 10, page = 1 } = {}) {
+  return requestWapi(`/quere/quere?perPage=${encodeURIComponent(perPage)}&page=${encodeURIComponent(page)}`);
 }
