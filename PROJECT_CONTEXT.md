@@ -14,7 +14,7 @@ Nesta etapa, estamos priorizando:
 - demonstracao visual convincente
 - fluxos claros de cobranca
 - organizacao por condominio
-- simulacao de operacao real sem depender ainda de integracoes externas
+- envio real por e-mail com operacao simples
 
 Ainda nao estamos priorizando:
 
@@ -37,6 +37,15 @@ O sistema deve ajudar administradoras a:
 - visualizar cada condominio separadamente
 - acompanhar um fluxo de caixa simples
 
+## Estado funcional atual
+
+- O canal de e-mail esta ativo com envio via Resend.
+- WhatsApp e SMS permanecem no painel como canais futuros, bloqueados para envio no MVP atual.
+- Condominios e condominos podem ser cadastrados e editados.
+- Condominios podem ser visualizados por filtro operacional.
+- Condominios possuem condominio, unidade, status, mensalidade, e-mail e telefone.
+- O historico de mensagens registra status e destinatario quando disponivel.
+
 ## Regra critica sobre arquitetura
 
 Este projeto NAO deve ser tratado como SaaS multi-tenant neste MVP.
@@ -57,9 +66,10 @@ Isso deve evitar que decisoes futuras empurrem o projeto para uma arquitetura ma
 ## Stack e abordagem atual
 
 - frontend em `Vite`, com `HTML`, `CSS` e `JavaScript`
-- backend futuro com `Node.js` e `TypeScript`
+- backend serverless em `api/` com `Node.js`
 - banco do MVP com `Neon Postgres`
-- integracoes futuras com `WhatsApp`, `E-mail`, `SMS` e possivelmente `Ucondo` ou `Superlogica`
+- envio de e-mail com `Resend`
+- integracoes futuras com `WhatsApp`, `SMS` e possivelmente `Ucondo` ou `Superlogica`
 
 ## Forma de validacao do MVP
 
@@ -68,7 +78,7 @@ Este MVP precisa ser validado principalmente por:
 - clareza visual
 - fluxo de uso simples
 - telas que mostrem valor comercial
-- simulacao convincente de cobranca
+- envio real de cobranca por e-mail
 - organizacao por condominio
 - facilidade de demonstracao para administradoras
 

@@ -9,6 +9,8 @@ const state = {
   messages: [],
   cashflow: [],
   hasLoaded: false,
+  editingCondoId: null,
+  editingResidentId: null,
 };
 
 const currency = new Intl.NumberFormat("pt-BR", {
@@ -60,6 +62,10 @@ function getResidentById(residentId) {
   return state.residents.find((resident) => resident.id === residentId);
 }
 
+function getAgentByChannel(channel) {
+  return state.agents.find((agent) => agent.channel === channel);
+}
+
 function getFilteredResidents() {
   if (state.selectedCondo === "all") {
     return state.residents;
@@ -82,6 +88,19 @@ function getChannelLabel(channel) {
 
 function getAgentStatusLabel(status) {
   return status === "paused" ? "Pausado" : "Ativo";
+}
+
+function getMessageStatusLabel(status) {
+  if (status === "sent") return "Enviado";
+  if (status === "failed") return "Falhou";
+  if (status === "queued") return "Na fila";
+  return "Simulado";
+}
+
+function getMessageStatusClass(status) {
+  if (status === "failed") return "danger";
+  if (status === "sent") return "success";
+  return "";
 }
 
 function formatTimeline(value) {
@@ -200,11 +219,13 @@ function renderFilters() {
   $("#channelSelect").innerHTML = state.agents
     .map((agent) => `<option value="${escapeHtml(agent.channel)}">${escapeHtml(getChannelLabel(agent.channel))}</option>`)
     .join("");
+  $("#channelSelect").value = state.agents.some((agent) => agent.channel === "email") ? "email" : state.agents[0]?.channel || "email";
 
   $("#agentChannel").innerHTML = state.agents
     .map((agent) => `<option value="${escapeHtml(agent.channel)}">${escapeHtml(getChannelLabel(agent.channel))}</option>`)
     .join("");
   $("#agentChannel").value = state.selectedAgentChannel;
+  updateChargeChannelState();
 }
 
 function renderMetrics() {
@@ -234,9 +255,11 @@ function renderChannels() {
         <div class="channel-item">
           <div>
             <strong>${escapeHtml(getChannelLabel(agent.channel))}</strong>
-            <p>${agent.queue} mensagens na fila</p>
+            <p>${agent.channel === "email" ? `${agent.queue} mensagens na fila` : "Canal ainda não conectado"}</p>
           </div>
-          <span class="pill ${agent.status === "paused" ? "danger" : ""}">${escapeHtml(getAgentStatusLabel(agent.status))}</span>
+          <span class="pill ${agent.channel !== "email" || agent.status === "paused" ? "danger" : ""}">
+            ${escapeHtml(agent.channel === "email" ? getAgentStatusLabel(agent.status) : "Em breve")}
+          </span>
         </div>
       `,
     )
@@ -269,9 +292,11 @@ function renderAgents() {
         <div class="agent-card">
           <div class="agent-card-header">
             <strong>${escapeHtml(getChannelLabel(agent.channel))}</strong>
-            <span class="pill ${agent.status === "paused" ? "danger" : ""}">${escapeHtml(getAgentStatusLabel(agent.status))}</span>
+            <span class="pill ${agent.channel !== "email" || agent.status === "paused" ? "danger" : ""}">
+              ${escapeHtml(agent.channel === "email" ? getAgentStatusLabel(agent.status) : "Em breve")}
+            </span>
           </div>
-          <p>${agent.queue} mensagens aguardando envio.</p>
+          <p>${agent.channel === "email" ? `${agent.queue} mensagens aguardando envio.` : "Representado no MVP, mas sem integração ativa nesta etapa."}</p>
           <small>Tom: ${escapeHtml(agent.tone)}</small>
         </div>
       `,
@@ -313,6 +338,7 @@ function renderResidentSelect() {
   $("#residentSelect").innerHTML = options;
   updateMessagePreview();
   updateChargeEmailField({ shouldPrefill: true });
+  updateChargeChannelState();
 }
 
 function updateMessagePreview() {
@@ -321,7 +347,17 @@ function updateMessagePreview() {
 
   if (!resident) return;
 
-  $("#messageInput").value = `Olá, ${resident.name}. Identificamos uma pendência de ${currency.format(fromCents(resident.amountCents))} referente à unidade ${resident.unit} do ${getCondoName(resident.condoId)}. Podemos te ajudar com a regularização?`;
+  const channel = $("#channelSelect").value;
+  const agent = getAgentByChannel(channel) || getAgentByChannel("email");
+  const fallbackTemplate = "Olá, {{nome}}. Identificamos uma pendência de {{valor}} referente à unidade {{unidade}} do {{condominio}}. Podemos te ajudar com a regularização?";
+  const template = agent?.template || fallbackTemplate;
+
+  $("#messageInput").value = template
+    .replaceAll("{{nome}}", resident.name)
+    .replaceAll("{{unidade}}", resident.unit)
+    .replaceAll("{{condominio}}", getCondoName(resident.condoId))
+    .replaceAll("{{valor}}", currency.format(fromCents(resident.amountCents)))
+    .replaceAll("{{dias}}", String(resident.days || 0));
   updateChargeEmailField({ shouldPrefill: true });
 }
 
@@ -345,6 +381,19 @@ function updateChargeEmailField({ shouldPrefill = false } = {}) {
   }
 }
 
+function updateChargeChannelState() {
+  const channel = $("#channelSelect").value;
+  const isEmail = channel === "email";
+  const submitButton = $("#chargeForm").querySelector("button[type='submit']");
+  const text = $("#channelAvailabilityText");
+
+  submitButton.disabled = !isEmail;
+  text.textContent = isEmail
+    ? "Canal ativo: envio real por e-mail via Resend."
+    : `${getChannelLabel(channel)} ainda não está integrado neste MVP. Use e-mail por enquanto.`;
+  text.classList.toggle("danger", !isEmail);
+}
+
 function renderMessages() {
   $("#messageHistory").innerHTML = state.messages
     .map(
@@ -352,7 +401,11 @@ function renderMessages() {
         <div class="history-item">
           <div class="history-top">
             <strong>${escapeHtml(message.resident)}</strong>
-            <span class="pill">${escapeHtml(getChannelLabel(message.channel))}</span>
+            <span class="pill ${escapeHtml(getMessageStatusClass(message.status))}">${escapeHtml(getMessageStatusLabel(message.status))}</span>
+          </div>
+          <div class="history-meta">
+            <span>${escapeHtml(getChannelLabel(message.channel))}</span>
+            ${message.recipient ? `<span>${escapeHtml(message.recipient)}</span>` : ""}
           </div>
           ${message.subject ? `<small class="history-subject">${escapeHtml(message.subject)}</small>` : ""}
           <p>${escapeHtml(message.text)}</p>
@@ -377,6 +430,10 @@ function renderCondos() {
           </div>
           <p>${escapeHtml(condo.district)} - taxa média ${currency.format(fromCents(condo.feeCents))}</p>
           <small>${residents.length} condôminos cadastrados, ${overdue.length} em atraso</small>
+          <div class="card-actions">
+            <button class="ghost-button" type="button" data-condo-view="${escapeHtml(condo.id)}">Ver operação</button>
+            <button class="ghost-button" type="button" data-condo-edit="${escapeHtml(condo.id)}">Editar</button>
+          </div>
         </div>
       `;
     })
@@ -393,8 +450,10 @@ function renderResidents() {
           <td data-label="Nome">${escapeHtml(resident.name)}</td>
           <td data-label="Condomínio">${escapeHtml(getCondoName(resident.condoId))}</td>
           <td data-label="Unidade">${escapeHtml(resident.unit)}</td>
+          <td data-label="Contato">${escapeHtml(resident.email || resident.phone || "Sem contato")}</td>
           <td data-label="Status"><span class="pill ${resident.status === "overdue" ? "danger" : ""}">${resident.status === "paid" ? "Adimplente" : "Inadimplente"}</span></td>
           <td data-label="Mensalidade">${currency.format(fromCents(resident.amountCents))}</td>
+          <td data-label="Ações"><button class="ghost-button table-action" type="button" data-resident-edit="${escapeHtml(resident.id)}">Editar</button></td>
         </tr>
       `,
     )
@@ -431,6 +490,58 @@ function renderCashflow() {
   $("#cashExpected").textContent = current
     ? currency.format(fromCents(current.receivedCents + current.pendingCents))
     : currency.format(0);
+}
+
+function resetCondoForm() {
+  state.editingCondoId = null;
+  $("#condoForm").reset();
+  $("#condoUnits").value = 80;
+  $("#condoFee").value = 620;
+  $("#condoSubmitButton").textContent = "Adicionar condomínio";
+  $("#condoCancelEditButton").classList.add("is-hidden");
+}
+
+function resetResidentForm() {
+  state.editingResidentId = null;
+  $("#residentForm").reset();
+  $("#residentAmount").value = 620;
+  $("#residentDays").value = 0;
+  $("#residentSubmitButton").textContent = "Adicionar condômino";
+  $("#residentCancelEditButton").classList.add("is-hidden");
+}
+
+function startCondoEdit(condoId) {
+  const condo = state.condos.find((item) => item.id === condoId);
+
+  if (!condo) return;
+
+  state.editingCondoId = condoId;
+  $("#condoName").value = condo.name;
+  $("#condoDistrict").value = condo.district;
+  $("#condoUnits").value = condo.units;
+  $("#condoFee").value = fromCents(condo.feeCents);
+  $("#condoSubmitButton").textContent = "Salvar condomínio";
+  $("#condoCancelEditButton").classList.remove("is-hidden");
+  setView("condos");
+}
+
+function startResidentEdit(residentId) {
+  const resident = getResidentById(residentId);
+
+  if (!resident) return;
+
+  state.editingResidentId = residentId;
+  $("#residentName").value = resident.name;
+  $("#residentEmail").value = resident.email || "";
+  $("#residentPhone").value = resident.phone || "";
+  $("#residentCondo").value = resident.condoId;
+  $("#residentUnit").value = resident.unit;
+  $("#residentAmount").value = fromCents(resident.amountCents);
+  $("#residentStatus").value = resident.status;
+  $("#residentDays").value = resident.days || 0;
+  $("#residentSubmitButton").textContent = "Salvar condômino";
+  $("#residentCancelEditButton").classList.remove("is-hidden");
+  setView("residents");
 }
 
 function renderAll() {
@@ -501,7 +612,37 @@ $("#agentChannel").addEventListener("change", (event) => {
 });
 
 $("#residentSelect").addEventListener("change", updateMessagePreview);
-$("#channelSelect").addEventListener("change", () => updateChargeEmailField({ shouldPrefill: true }));
+$("#channelSelect").addEventListener("change", () => {
+  updateMessagePreview();
+  updateChargeEmailField({ shouldPrefill: true });
+  updateChargeChannelState();
+});
+
+$("#condoCancelEditButton").addEventListener("click", resetCondoForm);
+$("#residentCancelEditButton").addEventListener("click", resetResidentForm);
+
+$("#condoCards").addEventListener("click", (event) => {
+  const viewButton = event.target.closest("[data-condo-view]");
+  const editButton = event.target.closest("[data-condo-edit]");
+
+  if (viewButton) {
+    state.selectedCondo = viewButton.dataset.condoView;
+    renderAll();
+    setView("dashboard");
+  }
+
+  if (editButton) {
+    startCondoEdit(editButton.dataset.condoEdit);
+  }
+});
+
+$("#residentTable").addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-resident-edit]");
+
+  if (editButton) {
+    startResidentEdit(editButton.dataset.residentEdit);
+  }
+});
 
 $("#chargeForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -546,6 +687,7 @@ $("#agentConfigForm").addEventListener("submit", async (event) => {
     });
 
     await loadAppData({ silent: true });
+    updateMessagePreview();
     setNotice("Configuração do agente atualizada.", "success");
   } catch (error) {
     setNotice(error.message, "error");
@@ -556,9 +698,12 @@ $("#condoForm").addEventListener("submit", async (event) => {
   event.preventDefault();
 
   try {
+    const isEditing = Boolean(state.editingCondoId);
+
     await requestJson("/api/condominiums", {
-      method: "POST",
+      method: isEditing ? "PUT" : "POST",
       body: JSON.stringify({
+        id: state.editingCondoId,
         name: $("#condoName").value.trim(),
         district: $("#condoDistrict").value.trim(),
         units: Number($("#condoUnits").value),
@@ -566,11 +711,9 @@ $("#condoForm").addEventListener("submit", async (event) => {
       }),
     });
 
-    event.target.reset();
-    $("#condoUnits").value = 80;
-    $("#condoFee").value = 620;
+    resetCondoForm();
     await loadAppData({ silent: true });
-    setNotice("Condomínio adicionado com sucesso.", "success");
+    setNotice(isEditing ? "Condomínio atualizado com sucesso." : "Condomínio adicionado com sucesso.", "success");
   } catch (error) {
     setNotice(error.message, "error");
   }
@@ -580,10 +723,15 @@ $("#residentForm").addEventListener("submit", async (event) => {
   event.preventDefault();
 
   try {
+    const isEditing = Boolean(state.editingResidentId);
+
     await requestJson("/api/residents", {
-      method: "POST",
+      method: isEditing ? "PUT" : "POST",
       body: JSON.stringify({
+        id: state.editingResidentId,
         name: $("#residentName").value.trim(),
+        email: $("#residentEmail").value.trim(),
+        phone: $("#residentPhone").value.trim(),
         condoId: $("#residentCondo").value,
         unit: $("#residentUnit").value.trim(),
         amount: Number($("#residentAmount").value),
@@ -592,11 +740,9 @@ $("#residentForm").addEventListener("submit", async (event) => {
       }),
     });
 
-    event.target.reset();
-    $("#residentAmount").value = 620;
-    $("#residentDays").value = 0;
+    resetResidentForm();
     await loadAppData({ silent: true });
-    setNotice("Condômino adicionado com sucesso.", "success");
+    setNotice(isEditing ? "Condômino atualizado com sucesso." : "Condômino adicionado com sucesso.", "success");
   } catch (error) {
     setNotice(error.message, "error");
   }

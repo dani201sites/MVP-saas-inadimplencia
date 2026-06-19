@@ -2,13 +2,16 @@ import { getCollectionStage, getSql, normalizeResidentStatus } from "./_lib/db.j
 import { allowMethods, handleApiError, readJsonBody, sendJson } from "./_lib/http.js";
 
 export default async function handler(req, res) {
-  if (!allowMethods(req, res, ["POST"])) {
+  if (!allowMethods(req, res, ["POST", "PUT"])) {
     return;
   }
 
   try {
     const body = await readJsonBody(req);
+    const id = String(body.id || "").trim();
     const name = String(body.name || "").trim();
+    const email = String(body.email || "").trim() || null;
+    const phone = String(body.phone || "").trim() || null;
     const condoId = String(body.condoId || "").trim();
     const unit = String(body.unit || "").trim();
     const amount = Number(body.amount);
@@ -18,16 +21,44 @@ export default async function handler(req, res) {
     const stage = getCollectionStage(status, days);
     const paidAt = status === "paid" ? new Date().toISOString() : null;
 
+    if (req.method === "PUT" && !id) {
+      throw Object.assign(new Error("Informe o condômino que será atualizado."), { statusCode: 400 });
+    }
+
     if (!name || !condoId || !unit || !Number.isFinite(amount) || amount < 1) {
       throw Object.assign(new Error("Preencha os dados do condômino corretamente."), { statusCode: 400 });
     }
 
     const sql = getSql();
-    const [resident] = await sql`
-      insert into residents (condominium_id, full_name, unit_label, monthly_fee_cents)
-      values (${condoId}, ${name}, ${unit}, ${amountCents})
-      returning id, condominium_id, full_name, unit_label, monthly_fee_cents
-    `;
+    let resident;
+
+    if (req.method === "PUT") {
+      const rows = await sql`
+        update residents
+        set
+          condominium_id = ${condoId},
+          full_name = ${name},
+          unit_label = ${unit},
+          phone = ${phone},
+          email = ${email},
+          monthly_fee_cents = ${amountCents},
+          updated_at = now()
+        where id = ${id}
+        returning id, condominium_id, full_name, unit_label, phone, email, monthly_fee_cents
+      `;
+
+      if (!rows.length) {
+        throw Object.assign(new Error("Condômino não encontrado para atualização."), { statusCode: 404 });
+      }
+
+      resident = rows[0];
+    } else {
+      [resident] = await sql`
+        insert into residents (condominium_id, full_name, unit_label, phone, email, monthly_fee_cents)
+        values (${condoId}, ${name}, ${unit}, ${phone}, ${email}, ${amountCents})
+        returning id, condominium_id, full_name, unit_label, phone, email, monthly_fee_cents
+      `;
+    }
 
     await sql`
       insert into billing_records (
@@ -52,10 +83,11 @@ export default async function handler(req, res) {
         ${days},
         cast(${stage} as collection_stage),
         ${paidAt},
-        ${status === "overdue" ? "Registro criado pelo painel do MVP." : "Pagamento marcado como regular no cadastro inicial."}
+        ${status === "overdue" ? "Registro atualizado pelo painel do MVP." : "Pagamento marcado como regular no cadastro."}
       )
       on conflict (resident_id, reference_month) do update
       set
+        condominium_id = excluded.condominium_id,
         due_date = excluded.due_date,
         amount_cents = excluded.amount_cents,
         status = excluded.status,
@@ -66,12 +98,14 @@ export default async function handler(req, res) {
         updated_at = now()
     `;
 
-    sendJson(res, 201, {
+    sendJson(res, req.method === "PUT" ? 200 : 201, {
       resident: {
         id: resident.id,
         name: resident.full_name,
         condoId: resident.condominium_id,
         unit: resident.unit_label,
+        email: resident.email || "",
+        phone: resident.phone || "",
         amountCents,
         status,
         days,

@@ -24,54 +24,112 @@ async function findResidentContext(sql, residentId) {
   return rows[0];
 }
 
-async function insertMessageLog(sql, resident, { subject, message, status, externalMessageId }) {
-  const inserted = await sql`
-    with actor as (
-      select id
-      from app_users
-      where email = 'admin@condoagent.com'
-      order by created_at asc
-      limit 1
-    ),
-    selected_agent as (
-      select id
-      from message_agents
-      where channel = 'email'::channel_type
-      limit 1
-    )
-    insert into message_logs (
-      billing_record_id,
-      resident_id,
-      condominium_id,
-      agent_id,
-      created_by_user_id,
-      channel,
-      stage,
-      subject,
-      body,
-      status,
-      queued_at,
-      sent_at,
-      external_message_id
-    )
-    select
-      ${resident.current_billing_record_id},
-      ${resident.resident_id},
-      ${resident.condominium_id},
-      sa.id,
-      a.id,
-      'email'::channel_type,
-      ${resident.stage},
-      ${subject},
-      ${message},
-      cast(${status} as message_status),
-      now(),
-      now(),
-      ${externalMessageId}
-    from actor a
-    full join selected_agent sa on true
-    returning id
-  `;
+async function insertMessageLog(sql, resident, { subject, message, recipient, status, externalMessageId }) {
+  let inserted;
+
+  try {
+    inserted = await sql`
+      with actor as (
+        select id
+        from app_users
+        where email = 'admin@condoagent.com'
+        order by created_at asc
+        limit 1
+      ),
+      selected_agent as (
+        select id
+        from message_agents
+        where channel = 'email'::channel_type
+        limit 1
+      )
+      insert into message_logs (
+        billing_record_id,
+        resident_id,
+        condominium_id,
+        agent_id,
+        created_by_user_id,
+        channel,
+        stage,
+        subject,
+        recipient,
+        body,
+        status,
+        queued_at,
+        sent_at,
+        external_message_id
+      )
+      select
+        ${resident.current_billing_record_id},
+        ${resident.resident_id},
+        ${resident.condominium_id},
+        sa.id,
+        a.id,
+        'email'::channel_type,
+        ${resident.stage},
+        ${subject},
+        ${recipient},
+        ${message},
+        cast(${status} as message_status),
+        now(),
+        now(),
+        ${externalMessageId}
+      from actor a
+      full join selected_agent sa on true
+      returning id
+    `;
+  } catch (error) {
+    if (error?.code !== "42703") {
+      throw error;
+    }
+
+    inserted = await sql`
+      with actor as (
+        select id
+        from app_users
+        where email = 'admin@condoagent.com'
+        order by created_at asc
+        limit 1
+      ),
+      selected_agent as (
+        select id
+        from message_agents
+        where channel = 'email'::channel_type
+        limit 1
+      )
+      insert into message_logs (
+        billing_record_id,
+        resident_id,
+        condominium_id,
+        agent_id,
+        created_by_user_id,
+        channel,
+        stage,
+        subject,
+        body,
+        status,
+        queued_at,
+        sent_at,
+        external_message_id
+      )
+      select
+        ${resident.current_billing_record_id},
+        ${resident.resident_id},
+        ${resident.condominium_id},
+        sa.id,
+        a.id,
+        'email'::channel_type,
+        ${resident.stage},
+        ${subject},
+        ${message},
+        cast(${status} as message_status),
+        now(),
+        now(),
+        ${externalMessageId}
+      from actor a
+      full join selected_agent sa on true
+      returning id
+    `;
+  }
 
   if (!inserted.length) {
     throw Object.assign(new Error("Não foi possível registrar a cobrança no histórico."), { statusCode: 500 });
@@ -125,6 +183,7 @@ export default async function handler(req, res) {
       await insertMessageLog(sql, resident, {
         subject,
         message,
+        recipient: recipientEmail,
         status: "failed",
         externalMessageId: null,
       });
@@ -135,6 +194,7 @@ export default async function handler(req, res) {
     const log = await insertMessageLog(sql, resident, {
       subject,
       message,
+      recipient: recipientEmail,
       status: delivery.status,
       externalMessageId: delivery.externalMessageId,
     });

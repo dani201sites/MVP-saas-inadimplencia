@@ -166,9 +166,21 @@ form button {
   background: var(--brand);
 }
 
+form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .ghost-button {
   color: var(--brand-strong);
   background: #e8f3ef;
+}
+
+.form-actions,
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .logout-button {
@@ -266,6 +278,17 @@ form button {
   color: var(--danger);
   background: var(--danger-bg);
   border-color: #f0cfc7;
+}
+
+.helper-text {
+  margin: -6px 0 0;
+  color: var(--brand-strong);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.helper-text.danger {
+  color: var(--danger);
 }
 
 .topbar-actions {
@@ -420,11 +443,35 @@ form button {
   background: var(--danger-bg);
 }
 
+.pill.success {
+  color: var(--ok);
+  background: var(--ok-bg);
+}
+
 .history-subject {
   display: block;
   margin: -2px 0 8px;
   color: var(--brand-strong);
   font-weight: 800;
+}
+
+.history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.card-actions {
+  margin-top: 12px;
+}
+
+.table-action {
+  min-height: 34px;
+  padding: 0 12px;
 }
 
 .table-wrap {
@@ -686,6 +733,11 @@ th {
 
   .panel-header .ghost-button {
     width: 100%;
+  }
+
+  .form-actions,
+  .card-actions {
+    flex-direction: column;
   }
 
   .chart-card {

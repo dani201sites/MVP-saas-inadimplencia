@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   try {
     const sql = getSql();
 
-    const [condos, residents, agents, messages, cashflow] = await Promise.all([
+    const [condos, residents, agents, cashflow] = await Promise.all([
       sql`
         select id, name, district, units_count, average_fee_cents
         from condominiums
@@ -20,6 +20,7 @@ export default async function handler(req, res) {
           resident_id as id,
           full_name,
           email,
+          phone,
           condominium_id,
           condominium_name,
           unit_label,
@@ -44,19 +45,6 @@ export default async function handler(req, res) {
       `,
       sql`
         select
-          id,
-          resident_name,
-          channel::text as channel,
-          subject,
-          status::text as status,
-          body,
-          coalesce(sent_at, created_at) as sent_at
-        from v_message_history
-        order by coalesce(sent_at, created_at) desc
-        limit 20
-      `,
-      sql`
-        select
           reference_month,
           amount_received_cents,
           amount_pending_cents
@@ -65,6 +53,43 @@ export default async function handler(req, res) {
         order by reference_month
       `,
     ]);
+    let messages;
+
+    try {
+      messages = await sql`
+        select
+          id,
+          resident_name,
+          channel::text as channel,
+          subject,
+          recipient,
+          status::text as status,
+          body,
+          coalesce(sent_at, created_at) as sent_at
+        from v_message_history
+        order by coalesce(sent_at, created_at) desc
+        limit 20
+      `;
+    } catch (error) {
+      if (error?.code !== "42703") {
+        throw error;
+      }
+
+      messages = await sql`
+        select
+          id,
+          resident_name,
+          channel::text as channel,
+          subject,
+          '' as recipient,
+          status::text as status,
+          body,
+          coalesce(sent_at, created_at) as sent_at
+        from v_message_history
+        order by coalesce(sent_at, created_at) desc
+        limit 20
+      `;
+    }
 
     sendJson(res, 200, {
       condos: condos.map((row) => ({
@@ -78,6 +103,7 @@ export default async function handler(req, res) {
         id: row.id,
         name: row.full_name,
         email: row.email || "",
+        phone: row.phone || "",
         condoId: row.condominium_id,
         condoName: row.condominium_name,
         unit: row.unit_label,
@@ -97,6 +123,7 @@ export default async function handler(req, res) {
         resident: row.resident_name,
         channel: row.channel,
         subject: row.subject || "",
+        recipient: row.recipient || "",
         status: row.status,
         text: row.body,
         isTest: String(row.subject || "").toLowerCase().includes("teste"),

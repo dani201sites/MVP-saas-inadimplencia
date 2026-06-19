@@ -10,7 +10,7 @@ O sistema terá como objetivo automatizar comunicações relacionadas a pagament
 
 Construir uma demonstração funcional para apresentar a administradoras condominiais, mostrando como agentes de IA podem apoiar processos de comunicação e cobrança de forma organizada, escalável e com operação simples.
 
-Neste momento, o foco do projeto e iniciar pelo frontend funcional do painel administrativo, com dados simulados e fluxos visuais claros para demonstracao.
+Neste momento, o foco do projeto e manter um MVP funcional para demonstracao, com painel administrativo, persistencia no Neon Postgres e envio real de cobrancas por e-mail via Resend.
 
 ## Contexto do projeto
 
@@ -26,7 +26,7 @@ Além da cobrança, o sistema também poderá evoluir para outras comunicações
 
 ## Escopo atual do MVP
 
-O MVP atual sera pensado primeiro como uma demonstracao visual e funcional, antes das integracoes reais com canais externos.
+O MVP atual e uma demonstracao visual e funcional com banco persistente. O canal de e-mail ja possui envio real; WhatsApp e SMS seguem representados no painel, mas ainda indisponiveis para envio.
 
 O painel deve permitir:
 
@@ -79,15 +79,15 @@ Ja existe uma primeira demonstracao funcional publicada com:
 - login simples
 - dashboard
 - cadastro de condominios
-- cadastro de condominos
+- cadastro e edicao de condominos com e-mail e telefone
 - painel de agentes
-- tela de cobrancas
-- historico de mensagens
+- tela de cobrancas com envio real por e-mail
+- historico de mensagens com status e destinatario
 - fluxo de caixa simples
 - estrutura pronta para deploy simples na `Vercel`
 - persistencia no `Neon Postgres` via endpoints serverless em `api/`
 
-As integracoes reais com WhatsApp, e-mail, SMS e automacoes ainda nao fazem parte desta etapa inicial. O banco de dados do MVP esta preparado no `Neon Postgres` para persistir dados da demonstracao.
+WhatsApp, SMS e automacoes ainda nao fazem parte desta etapa funcional. Esses canais aparecem como "em breve" para preservar a demonstracao do produto sem parecer erro operacional.
 
 Status validado:
 
@@ -96,6 +96,7 @@ Status validado:
 - banco de dados zerado para novo cadastro manual da demonstracao
 - tabelas operacionais sem dados iniciais: `condominiums`, `residents`, `billing_records`, `message_logs` e `cashflow_monthly`
 - agentes de canal mantidos em `message_agents` para preservar WhatsApp, e-mail e SMS no painel
+- migracao `database/neon_mvp_migration_message_recipient.sql` aplicada no Neon para registrar destinatario real no historico
 
 ## Próximos passos
 
@@ -159,7 +160,7 @@ Se o app ficar preso na tela de login, olhar primeiro os logs da funcao `/api/bo
 Proximos passos mais provaveis:
 
 - cadastrar dados reais de demonstracao pelo painel publicado
-- criar tela individual por condominio
+- evoluir a visao individual por condominio alem do filtro operacional atual
 - criar regua simples de cobranca
 - melhorar tratamento visual para estados vazios do dashboard
 

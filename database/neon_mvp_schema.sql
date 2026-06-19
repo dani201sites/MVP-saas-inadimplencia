@@ -137,6 +137,7 @@ create table if not exists message_logs (
   channel channel_type not null,
   stage collection_stage,
   subject text,
+  recipient text,
   body text not null,
   status message_status not null default 'simulated',
   queued_at timestamptz,
@@ -267,7 +268,8 @@ select
   c.name as condominium_name,
   ma.channel as agent_channel,
   ml.subject,
-  ml.body
+  ml.body,
+  coalesce(ml.recipient, r.email::text, '') as recipient
 from message_logs ml
 join residents r on r.id = ml.resident_id
 join condominiums c on c.id = ml.condominium_id

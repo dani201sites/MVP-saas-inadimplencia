@@ -15,6 +15,12 @@ Estruturei este banco com base no frontend publicado em `https://sistema-de-inad
 1. Rode `database/neon_mvp_schema.sql`
 2. Rode `database/neon_mvp_seed.sql`
 
+## Migrações incrementais
+
+Se o banco já existir no Neon, rode também:
+
+- `database/neon_mvp_migration_message_recipient.sql`: adiciona o destinatário real no histórico de mensagens.
+
 ## Tabelas principais
 
 - `app_users`: operadores do painel

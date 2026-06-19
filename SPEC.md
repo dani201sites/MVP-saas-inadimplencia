@@ -73,16 +73,19 @@ Tambem deve permitir:
 
 Deve permitir:
 
-- selecionar um condomino inadimplente
+- selecionar um condomino cadastrado
 - escolher o canal de envio
-- gerar uma mensagem de cobranca
-- simular envio
+- gerar uma mensagem de cobranca usando o template configurado do agente
+- enviar cobranca real por e-mail
+- bloquear WhatsApp e SMS enquanto nao estiverem integrados
 - registrar o envio no historico
 
 Historico deve mostrar:
 
 - nome do condomino
 - canal utilizado
+- status do envio
+- destinatario quando disponivel
 - conteudo da mensagem
 - horario do envio
 
@@ -94,6 +97,7 @@ Deve permitir:
 - cadastrar bairro ou regiao
 - cadastrar quantidade de unidades
 - cadastrar taxa media
+- editar dados basicos do condominio
 
 Tambem deve exibir:
 
@@ -107,11 +111,14 @@ Tambem deve exibir:
 Deve permitir:
 
 - cadastrar nome
+- cadastrar e-mail
+- cadastrar telefone
 - vincular a um condominio
 - informar unidade
 - informar valor mensal
 - marcar status como adimplente ou inadimplente
 - informar dias em atraso
+- editar dados basicos do condomino
 
 Tambem deve exibir:
 
@@ -119,6 +126,7 @@ Tambem deve exibir:
 - status individual
 - valor mensal
 - condominio vinculado
+- contato principal
 
 ### 7. Visao individual por condominio
 
@@ -147,9 +155,10 @@ Objetivo:
 ## Regras funcionais desta fase
 
 - os dados podem ser simulados
-- os envios podem ser simulados
+- o envio por e-mail pode ser real via Resend
+- WhatsApp e SMS devem ficar sinalizados como indisponiveis ate a integracao existir
 - os status podem ser simulados
-- nao e necessario backend real nesta etapa
+- o backend atual e serverless na Vercel para operacoes do MVP
 - nao e necessario login real nesta etapa
 
 ## Regras que nao fazem parte deste MVP
