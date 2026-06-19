@@ -255,10 +255,10 @@ function renderChannels() {
         <div class="channel-item">
           <div>
             <strong>${escapeHtml(getChannelLabel(agent.channel))}</strong>
-            <p>${agent.channel === "email" ? `${agent.queue} mensagens na fila` : "Canal ainda não conectado"}</p>
+            <p>${["email", "whatsapp"].includes(agent.channel) ? `${agent.queue} mensagens na fila` : "Canal ainda não conectado"}</p>
           </div>
-          <span class="pill ${agent.channel !== "email" || agent.status === "paused" ? "danger" : ""}">
-            ${escapeHtml(agent.channel === "email" ? getAgentStatusLabel(agent.status) : "Em breve")}
+          <span class="pill ${agent.channel === "sms" || agent.status === "paused" ? "danger" : ""}">
+            ${escapeHtml(agent.channel === "sms" ? "Em breve" : getAgentStatusLabel(agent.status))}
           </span>
         </div>
       `,
@@ -292,11 +292,11 @@ function renderAgents() {
         <div class="agent-card">
           <div class="agent-card-header">
             <strong>${escapeHtml(getChannelLabel(agent.channel))}</strong>
-            <span class="pill ${agent.channel !== "email" || agent.status === "paused" ? "danger" : ""}">
-              ${escapeHtml(agent.channel === "email" ? getAgentStatusLabel(agent.status) : "Em breve")}
+            <span class="pill ${agent.channel === "sms" || agent.status === "paused" ? "danger" : ""}">
+              ${escapeHtml(agent.channel === "sms" ? "Em breve" : getAgentStatusLabel(agent.status))}
             </span>
           </div>
-          <p>${agent.channel === "email" ? `${agent.queue} mensagens aguardando envio.` : "Representado no MVP, mas sem integração ativa nesta etapa."}</p>
+          <p>${agent.channel === "sms" ? "Representado no MVP, mas sem integração ativa nesta etapa." : `${agent.queue} mensagens aguardando envio.`}</p>
           <small>Tom: ${escapeHtml(agent.tone)}</small>
         </div>
       `,
@@ -384,14 +384,20 @@ function updateChargeEmailField({ shouldPrefill = false } = {}) {
 function updateChargeChannelState() {
   const channel = $("#channelSelect").value;
   const isEmail = channel === "email";
+  const isWhatsApp = channel === "whatsapp";
   const submitButton = $("#chargeForm").querySelector("button[type='submit']");
   const text = $("#channelAvailabilityText");
+  const resident = getResidentById($("#residentSelect").value);
 
-  submitButton.disabled = !isEmail;
+  submitButton.disabled = channel === "sms" || (isWhatsApp && !resident?.phone);
   text.textContent = isEmail
     ? "Canal ativo: envio real por e-mail via Resend."
-    : `${getChannelLabel(channel)} ainda não está integrado neste MVP. Use e-mail por enquanto.`;
-  text.classList.toggle("danger", !isEmail);
+    : isWhatsApp
+      ? resident?.phone
+        ? `Canal ativo: envio por WhatsApp para ${resident.phone}.`
+        : "Este condômino não possui telefone cadastrado para WhatsApp."
+      : `${getChannelLabel(channel)} ainda não está integrado neste MVP. Use e-mail ou WhatsApp por enquanto.`;
+  text.classList.toggle("danger", channel === "sms" || (isWhatsApp && !resident?.phone));
 }
 
 function renderMessages() {
@@ -664,7 +670,7 @@ $("#chargeForm").addEventListener("submit", async (event) => {
     });
 
     await loadAppData({ silent: true });
-    setNotice("Cobrança por e-mail enviada e registrada no histórico.", "success");
+    setNotice(`Cobrança por ${getChannelLabel($("#channelSelect").value)} enviada e registrada no histórico.`, "success");
   } catch (error) {
     setNotice(error.message, "error");
   } finally {

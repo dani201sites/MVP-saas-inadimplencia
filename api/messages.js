@@ -1,5 +1,6 @@
 import { getSql, normalizeChannel } from "./_lib/db.js";
 import { sendEmail } from "./_lib/email.js";
+import { normalizeWhatsAppRecipient, sendWhatsAppText } from "./_lib/wapi.js";
 import { allowMethods, handleApiError, readJsonBody, sendJson } from "./_lib/http.js";
 
 async function findResidentContext(sql, residentId) {
@@ -10,6 +11,7 @@ async function findResidentContext(sql, residentId) {
       full_name,
       unit_label,
       email,
+      phone,
       current_billing_record_id,
       stage
     from v_resident_portfolio
@@ -24,7 +26,7 @@ async function findResidentContext(sql, residentId) {
   return rows[0];
 }
 
-async function insertMessageLog(sql, resident, { subject, message, recipient, status, externalMessageId }) {
+async function insertMessageLog(sql, resident, { channel, subject, message, recipient, status, externalMessageId }) {
   let inserted;
 
   try {
@@ -39,7 +41,7 @@ async function insertMessageLog(sql, resident, { subject, message, recipient, st
       selected_agent as (
         select id
         from message_agents
-        where channel = 'email'::channel_type
+        where channel = cast(${channel} as channel_type)
         limit 1
       )
       insert into message_logs (
@@ -64,7 +66,7 @@ async function insertMessageLog(sql, resident, { subject, message, recipient, st
         ${resident.condominium_id},
         sa.id,
         a.id,
-        'email'::channel_type,
+        cast(${channel} as channel_type),
         ${resident.stage},
         ${subject},
         ${recipient},
@@ -93,7 +95,7 @@ async function insertMessageLog(sql, resident, { subject, message, recipient, st
       selected_agent as (
         select id
         from message_agents
-        where channel = 'email'::channel_type
+        where channel = cast(${channel} as channel_type)
         limit 1
       )
       insert into message_logs (
@@ -117,7 +119,7 @@ async function insertMessageLog(sql, resident, { subject, message, recipient, st
         ${resident.condominium_id},
         sa.id,
         a.id,
-        'email'::channel_type,
+        cast(${channel} as channel_type),
         ${resident.stage},
         ${subject},
         ${message},
@@ -150,8 +152,8 @@ export default async function handler(req, res) {
     const emailTo = String(body.emailTo || "").trim();
     const message = String(body.message || "").trim();
 
-    if (channel !== "email") {
-      throw Object.assign(new Error("Este canal ainda não está disponível. Use e-mail por enquanto."), { statusCode: 400 });
+    if (channel === "sms") {
+      throw Object.assign(new Error("SMS ainda não está disponível. Use e-mail ou WhatsApp por enquanto."), { statusCode: 400 });
     }
 
     if (!residentId || !message) {
@@ -160,30 +162,37 @@ export default async function handler(req, res) {
 
     const sql = getSql();
     const resident = await findResidentContext(sql, residentId);
-    const recipientEmail = emailTo || resident.email;
-
-    if (!recipientEmail) {
-      throw Object.assign(new Error("Informe um e-mail de destino para enviar a cobrança."), { statusCode: 400 });
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
-      throw Object.assign(new Error("Informe um e-mail de destino válido."), { statusCode: 400 });
-    }
-
     const subject = `Cobrança da unidade ${resident.unit_label}`;
+    const recipient = channel === "email" ? emailTo || resident.email : normalizeWhatsAppRecipient(resident.phone);
     let delivery;
 
     try {
-      delivery = await sendEmail({
-        to: recipientEmail,
-        subject,
-        message,
-      });
+      if (channel === "email") {
+        if (!recipient) {
+          throw Object.assign(new Error("Informe um e-mail de destino para enviar a cobrança."), { statusCode: 400 });
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+          throw Object.assign(new Error("Informe um e-mail de destino válido."), { statusCode: 400 });
+        }
+
+        delivery = await sendEmail({
+          to: recipient,
+          subject,
+          message,
+        });
+      } else {
+        delivery = await sendWhatsAppText({
+          to: recipient,
+          message,
+        });
+      }
     } catch (error) {
       await insertMessageLog(sql, resident, {
+        channel,
         subject,
         message,
-        recipient: recipientEmail,
+        recipient,
         status: "failed",
         externalMessageId: null,
       });
@@ -192,9 +201,10 @@ export default async function handler(req, res) {
     }
 
     const log = await insertMessageLog(sql, resident, {
+      channel,
       subject,
       message,
-      recipient: recipientEmail,
+      recipient,
       status: delivery.status,
       externalMessageId: delivery.externalMessageId,
     });
