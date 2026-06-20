@@ -30,11 +30,15 @@ function parseJsonFromText(text) {
 }
 
 export function getOpenRouterRuntimeConfig() {
+  const minConfidence = Number(process.env.OPENROUTER_AI_AUTOREPLY_MIN_CONFIDENCE || 0.75);
+
   return {
     enabled: process.env.OPENROUTER_AI_ENABLED === "true",
     mode: process.env.OPENROUTER_AI_MODE || "suggest",
     model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash-lite",
     hasApiKey: Boolean(process.env.OPENROUTER_API_KEY),
+    autoReplyEnabled: process.env.OPENROUTER_AI_AUTOREPLY_ENABLED === "true",
+    autoReplyMinConfidence: Number.isFinite(minConfidence) ? Math.max(0, Math.min(1, minConfidence)) : 0.75,
   };
 }
 

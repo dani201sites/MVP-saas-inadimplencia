@@ -461,7 +461,7 @@ function renderAiConversations() {
     .map((conversation) => {
       const confidence = conversation.aiConfidence === null ? "" : `${Math.round(conversation.aiConfidence * 100)}%`;
       const contact = conversation.contactPhone || conversation.contactLid || "Contato não identificado";
-      const canSend = Boolean(conversation.aiSuggestedReply);
+      const canSend = Boolean(conversation.aiSuggestedReply && conversation.aiShouldReply);
 
       return `
         <article class="ai-conversation-card">

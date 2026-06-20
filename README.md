@@ -110,6 +110,7 @@ Status validado:
 - migracao `database/neon_mvp_migration_whatsapp_ai_analysis.sql` aplicada no Neon para registrar analise e sugestao da IA nas mensagens de WhatsApp
 - area `IA WhatsApp` criada no painel para revisar mensagens recebidas, editar sugestoes e enviar respostas aprovadas manualmente
 - vinculo de conversas tenta localizar o condomino mesmo quando o WhatsApp retorna numero brasileiro sem o nono digito
+- resposta automatica da IA preparada por variaveis, com confianca minima e bloqueio para contestacao, pedido humano e pagamento realizado
 
 ## Próximos passos
 
@@ -158,6 +159,7 @@ Configuracao obrigatoria na `Vercel`:
 - criar `RESEND_API_KEY`, `EMAIL_FROM` e `EMAIL_SEND_MODE=live` para envio real de e-mail
 - criar `WAPI_INSTANCE_ID`, `WAPI_TOKEN`, `WAPI_SEND_MODE=live`, `WAPI_DEFAULT_DELAY_SECONDS` e `WAPI_WEBHOOK_SECRET` para envio real de WhatsApp
 - criar `OPENROUTER_API_KEY`, `OPENROUTER_MODEL=google/gemini-2.5-flash-lite`, `OPENROUTER_APP_NAME` e `OPENROUTER_SITE_URL` para a camada de IA
+- criar `OPENROUTER_AI_AUTOREPLY_ENABLED=false` e `OPENROUTER_AI_AUTOREPLY_MIN_CONFIDENCE=0.75` para controlar resposta automatica
 - manter `OPENROUTER_AI_ENABLED=false` ate o primeiro teste controlado da IA ser autorizado
 - marcar pelo menos `Production`; `Preview` tambem pode ser marcado
 - fazer novo deploy depois de salvar a variavel
@@ -172,6 +174,7 @@ Teste minimo depois do deploy:
 - abrir `/api/wapi/diagnostics?secret=SEU_SEGREDO` e confirmar que a W-API reconhece a instancia conectada
 - enviar uma cobranca pequena por WhatsApp para um numero de teste com formato `55` + DDD + numero, sem espacos ou simbolos
 - para testar IA, ligar `OPENROUTER_AI_ENABLED=true`, responder uma mensagem no WhatsApp e conferir se a ultima mensagem recebeu `ai_intent` e `ai_suggested_reply`
+- para testar resposta automatica, ligar `OPENROUTER_AI_AUTOREPLY_ENABLED=true` somente depois do deploy e mandar uma mensagem simples, como promessa de pagamento ou duvida de valor
 
 Se o app ficar preso na tela de login, olhar primeiro os logs da funcao `/api/bootstrap` na `Vercel`.
 

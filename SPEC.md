@@ -168,6 +168,7 @@ Objetivo:
 - a primeira integracao com LLM deve operar em modo assistido, sugerindo respostas antes de enviar automaticamente
 - a IA via OpenRouter deve permanecer atras de uma variavel liga/desliga e nao pode enviar mensagem sozinha nesta fase
 - a area `IA WhatsApp` deve permitir revisar, editar e enviar manualmente uma resposta sugerida pela IA
+- resposta automatica da IA so pode ocorrer quando a variavel estiver ligada, a confianca minima for atingida e a intencao nao estiver bloqueada
 
 ## Regras que nao fazem parte deste MVP
 

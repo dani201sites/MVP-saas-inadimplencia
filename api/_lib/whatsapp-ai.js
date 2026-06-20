@@ -1,4 +1,5 @@
 import { getOpenRouterRuntimeConfig, requestOpenRouterJson } from "./openrouter.js";
+import { normalizeWhatsAppRecipient, sendWhatsAppText } from "./wapi.js";
 
 const INTENTS = [
   "promessa_de_pagamento",
@@ -9,6 +10,7 @@ const INTENTS = [
   "saudacao",
   "outro",
 ];
+const AUTOREPLY_BLOCKED_INTENTS = new Set(["contestacao", "quer_humano", "pagamento_realizado"]);
 
 function centsToCurrency(cents) {
   const amount = Number(cents || 0) / 100;
@@ -43,6 +45,7 @@ async function loadMessageContext(sql, messageId, conversationId) {
       wcm.condominium_id,
       wc.contact_name,
       wc.contact_phone,
+      wc.contact_lid,
       r.full_name,
       r.unit_label,
       c.name as condominium_name,
@@ -120,11 +123,80 @@ function buildPrompt({ message, recentMessages, mode }) {
           "Para promessa de pagamento, agradeça e peça comprovante quando pagar.",
           "Para pagamento realizado, peça comprovante ou confirmação do setor financeiro.",
           "Para contestação, dúvida sensível ou pedido humano, marque handoff_required como true.",
+          "Para dúvida de valor, responda usando apenas o valor_atual e vencimento informados no contexto.",
           "Não diga que baixou cobrança, removeu multa ou confirmou pagamento.",
         ],
       }),
     },
   ];
+}
+
+function getAutoReplyBlockReason(config, message, result) {
+  if (!config.autoReplyEnabled) return "autoreply_disabled";
+  if (!result.shouldReply) return "ai_should_reply_false";
+  if (result.handoffRequired) return "handoff_required";
+  if (!result.suggestedReply) return "missing_suggested_reply";
+  if (result.confidence < config.autoReplyMinConfidence) return "low_confidence";
+  if (AUTOREPLY_BLOCKED_INTENTS.has(result.intent)) return "blocked_intent";
+  if (!message.contact_phone && !message.contact_lid) return "missing_contact_identifier";
+
+  return null;
+}
+
+async function sendAutoReply(sql, message, result) {
+  const recipient = normalizeWhatsAppRecipient(message.contact_phone || message.contact_lid);
+  const delivery = await sendWhatsAppText({
+    to: recipient,
+    message: result.suggestedReply,
+  });
+  const sentAt = new Date();
+  const inserted = await sql`
+    insert into whatsapp_conversation_messages (
+      conversation_id,
+      resident_id,
+      condominium_id,
+      direction,
+      origin,
+      body,
+      external_message_id,
+      external_event,
+      sender_phone,
+      sender_lid,
+      sender_name,
+      sent_at
+    )
+    values (
+      ${message.conversation_id},
+      ${message.resident_id},
+      ${message.condominium_id},
+      'outbound'::conversation_message_direction,
+      'ai'::conversation_message_origin,
+      ${result.suggestedReply},
+      ${delivery.externalMessageId},
+      'ai_autoreply',
+      ${message.contact_phone},
+      ${message.contact_lid},
+      ${message.contact_name || message.full_name || null},
+      ${sentAt}
+    )
+    returning id
+  `;
+
+  await sql`
+    update whatsapp_conversations
+    set
+      last_message_at = ${sentAt},
+      last_outbound_at = ${sentAt},
+      ai_handoff_required = false
+    where id = ${message.conversation_id}
+  `;
+
+  return {
+    sent: true,
+    messageId: inserted[0]?.id || null,
+    status: delivery.status,
+    externalMessageId: delivery.externalMessageId,
+  };
 }
 
 export async function analyzeInboundWhatsAppWithAi(sql, conversationResult) {
@@ -169,6 +241,12 @@ export async function analyzeInboundWhatsAppWithAi(sql, conversationResult) {
       temperature: 0.2,
     });
     const result = sanitizeAiResult(completion.data);
+    const autoReplyBlockReason = getAutoReplyBlockReason(config, message, result);
+    let autoReply = {
+      enabled: config.autoReplyEnabled,
+      sent: false,
+      reason: autoReplyBlockReason,
+    };
 
     await sql`
       update whatsapp_conversation_messages
@@ -183,6 +261,28 @@ export async function analyzeInboundWhatsAppWithAi(sql, conversationResult) {
         ai_processed_at = now()
       where id = ${conversationResult.messageId}
     `;
+
+    if (!autoReplyBlockReason) {
+      try {
+        autoReply = {
+          enabled: true,
+          ...(await sendAutoReply(sql, message, result)),
+        };
+
+        await sql`
+          update whatsapp_conversation_messages
+          set ai_should_reply = false
+          where id = ${conversationResult.messageId}
+        `;
+      } catch (error) {
+        autoReply = {
+          enabled: true,
+          sent: false,
+          reason: "send_failed",
+          error: error.message,
+        };
+      }
+    }
 
     await sql`
       update whatsapp_conversations
@@ -204,6 +304,7 @@ export async function analyzeInboundWhatsAppWithAi(sql, conversationResult) {
       shouldReply: result.shouldReply,
       handoffRequired: result.handoffRequired,
       suggestedReply: result.suggestedReply,
+      autoReply,
     };
   } catch (error) {
     await saveAiFailure(error);
