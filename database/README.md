@@ -79,4 +79,4 @@ A tabela `message_agents` foi mantida com os canais do MVP para o frontend conti
 - O backend foi preparado para gravar `webhookReceived` como mensagem `inbound` e envios manuais por WhatsApp como mensagem `outbound`.
 - A LLM via OpenRouter deve entrar depois desta camada, lendo a conversa salva para sugerir resposta ou acionar envio automatico em regras seguras.
 - A primeira integracao OpenRouter foi criada no backend em modo assistido: ela analisa apenas mensagens recebidas, classifica a intencao e salva uma sugestao curta quando `OPENROUTER_AI_ENABLED=true`.
-- Nesta fase, a IA nao envia resposta automatica pelo WhatsApp.
+- Nesta fase, a IA nao envia resposta automatica pelo WhatsApp; a area `IA WhatsApp` permite envio apenas apos aprovacao manual.

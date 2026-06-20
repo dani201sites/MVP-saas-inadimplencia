@@ -403,7 +403,8 @@ form button:disabled {
 .channel-list,
 .history-list,
 .agent-grid,
-.condo-grid {
+.condo-grid,
+.ai-conversation-list {
   display: grid;
   gap: 12px;
 }
@@ -411,7 +412,9 @@ form button:disabled {
 .channel-item,
 .history-item,
 .agent-card,
-.condo-card {
+.condo-card,
+.ai-conversation-card,
+.empty-state {
   padding: 14px;
   background: #fbfcfb;
   border: 1px solid var(--line);
@@ -421,7 +424,9 @@ form button:disabled {
 .history-item p,
 .channel-item p,
 .agent-card p,
-.condo-card p {
+.condo-card p,
+.ai-conversation-card p,
+.empty-state p {
   margin-bottom: 8px;
   color: var(--muted);
 }
@@ -463,6 +468,51 @@ form button:disabled {
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.ai-conversation-card {
+  display: grid;
+  gap: 14px;
+}
+
+.ai-card-top,
+.ai-card-footer,
+.ai-badges {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-card-top {
+  align-items: flex-start;
+}
+
+.ai-badges {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ai-message-block {
+  padding: 12px;
+  background: #f1f5f2;
+  border-radius: 6px;
+}
+
+.ai-message-block small,
+.ai-card-footer small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.ai-card-footer {
+  flex-wrap: wrap;
+}
+
+.ai-card-footer button:disabled,
+.ghost-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .card-actions {

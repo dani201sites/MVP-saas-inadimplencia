@@ -57,6 +57,8 @@ O sistema deve ajudar administradoras a:
 - A primeira camada de IA via OpenRouter foi criada para analisar mensagens recebidas, classificar intencao e gerar sugestao curta, mas fica desligada enquanto `OPENROUTER_AI_ENABLED` nao estiver como `true`.
 - O modelo inicial escolhido para baixo custo e `google/gemini-2.5-flash-lite`.
 - A migracao de analise da IA foi aplicada no Neon, adicionando campos para intencao, confianca, sugestao e modelo usado em `whatsapp_conversation_messages`.
+- A area `IA WhatsApp` do painel permite revisar a mensagem recebida, editar a sugestao da IA e enviar a resposta aprovada manualmente.
+- A vinculacao por telefone considera a variacao brasileira com e sem o nono digito apos o DDD.
 
 ## Regra critica sobre arquitetura
 
@@ -119,6 +121,7 @@ Nao devemos confundir:
 - nao ativar IA conversacional ate que mensagens recebidas estejam salvas e auditaveis
 - usar LLM primeiro como sugestao assistida, antes de liberar resposta automatica direta no WhatsApp
 - nao enviar resposta automatica da IA no WhatsApp nesta etapa; primeiro salvar e revisar a sugestao
+- respostas sugeridas pela IA so devem sair pelo WhatsApp apos clique manual do operador na area `IA WhatsApp`
 - nao mexer no fluxo de caixa por enquanto sem necessidade clara de banco
 
 ## Proximas referencias

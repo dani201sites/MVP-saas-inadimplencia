@@ -45,6 +45,7 @@
           <button class="nav-item is-active" data-view="dashboard">Dashboard</button>
           <button class="nav-item" data-view="agents">Agentes</button>
           <button class="nav-item" data-view="charges">Cobranças</button>
+          <button class="nav-item" data-view="whatsappAi">IA WhatsApp</button>
           <button class="nav-item" data-view="condos">Condomínios</button>
           <button class="nav-item" data-view="residents">Condôminos</button>
           <button class="nav-item" data-view="cashflow">Fluxo de caixa</button>
@@ -241,6 +242,22 @@
               <div id="messageHistory" class="history-list"></div>
             </article>
           </div>
+        </section>
+
+        <section id="whatsappAi" class="view">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Atendimento assistido</p>
+                <h3>Sugestões da IA para WhatsApp</h3>
+              </div>
+              <button id="refreshAiConversationsButton" class="ghost-button" type="button">Atualizar conversas</button>
+            </div>
+            <p class="helper-text">
+              A IA apenas sugere respostas. O WhatsApp só recebe mensagem quando você aprovar manualmente.
+            </p>
+            <div id="aiConversationList" class="ai-conversation-list"></div>
+          </article>
         </section>
 
         <section id="condos" class="view">

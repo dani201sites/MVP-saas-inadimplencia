@@ -53,15 +53,33 @@ function getContactIdentifiers(payload) {
   };
 }
 
+function getBrazilianPhoneVariants(contactPhone) {
+  const phone = String(contactPhone || "").replace(/\D/g, "");
+  const variants = new Set([phone]);
+
+  if (phone.startsWith("55") && phone.length === 12) {
+    variants.add(`${phone.slice(0, 4)}9${phone.slice(4)}`);
+  }
+
+  if (phone.startsWith("55") && phone.length === 13 && phone[4] === "9") {
+    variants.add(`${phone.slice(0, 4)}${phone.slice(5)}`);
+  }
+
+  return Array.from(variants).filter(Boolean);
+}
+
 async function findResidentByPhone(sql, contactPhone) {
   if (!contactPhone) {
     return null;
   }
 
+  const [primaryPhone, secondaryPhone = null] = getBrazilianPhoneVariants(contactPhone);
+
   const rows = await sql`
     select id, condominium_id, full_name
     from residents
-    where regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = ${contactPhone}
+    where regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = ${primaryPhone}
+       or (${secondaryPhone}::text is not null and regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = ${secondaryPhone})
     limit 1
   `;
 

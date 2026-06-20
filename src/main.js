@@ -7,6 +7,7 @@ const state = {
   residents: [],
   agents: [],
   messages: [],
+  aiConversations: [],
   cashflow: [],
   hasLoaded: false,
   editingCondoId: null,
@@ -34,6 +35,7 @@ const views = {
   dashboard: "Dashboard",
   agents: "Agentes",
   charges: "Cobranças",
+  whatsappAi: "IA WhatsApp",
   condos: "Condomínios",
   residents: "Condôminos",
   cashflow: "Fluxo de caixa",
@@ -184,11 +186,15 @@ async function loadAppData({ silent = false } = {}) {
     setNotice("Sincronizando dados do Neon...");
   }
 
-  const data = await requestJson("/api/bootstrap");
+  const [data, aiData] = await Promise.all([
+    requestJson("/api/bootstrap"),
+    requestJson("/api/whatsapp-conversations").catch(() => ({ conversations: [] })),
+  ]);
   state.condos = data.condos;
   state.residents = data.residents;
   state.agents = data.agents;
   state.messages = data.messages;
+  state.aiConversations = aiData.conversations || [];
   state.cashflow = data.cashflow;
   state.selectedAgentChannel = state.agents.some((agent) => agent.channel === state.selectedAgentChannel)
     ? state.selectedAgentChannel
@@ -422,6 +428,73 @@ function renderMessages() {
     .join("");
 }
 
+function getAiIntentLabel(intent) {
+  const labels = {
+    promessa_de_pagamento: "Promessa de pagamento",
+    pagamento_realizado: "Pagamento realizado",
+    duvida_valor: "Dúvida sobre valor",
+    contestacao: "Contestação",
+    quer_humano: "Quer atendimento humano",
+    saudacao: "Saudação",
+    outro: "Outro",
+  };
+
+  return labels[intent] || "Sem análise";
+}
+
+function renderAiConversations() {
+  const container = $("#aiConversationList");
+
+  if (!container) return;
+
+  if (!state.aiConversations.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <strong>Nenhuma conversa recebida ainda.</strong>
+        <p>Quando o condômino responder pelo WhatsApp, a análise da IA aparecerá aqui.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = state.aiConversations
+    .map((conversation) => {
+      const confidence = conversation.aiConfidence === null ? "" : `${Math.round(conversation.aiConfidence * 100)}%`;
+      const contact = conversation.contactPhone || conversation.contactLid || "Contato não identificado";
+      const canSend = Boolean(conversation.aiSuggestedReply);
+
+      return `
+        <article class="ai-conversation-card">
+          <div class="ai-card-top">
+            <div>
+              <strong>${escapeHtml(conversation.residentName)}</strong>
+              <p>${escapeHtml([conversation.condominiumName, conversation.unit].filter(Boolean).join(" - ") || contact)}</p>
+            </div>
+            <div class="ai-badges">
+              <span class="pill ${conversation.aiHandoffRequired ? "danger" : "success"}">${escapeHtml(getAiIntentLabel(conversation.aiIntent))}</span>
+              ${confidence ? `<span class="pill">${escapeHtml(confidence)}</span>` : ""}
+            </div>
+          </div>
+          <div class="ai-message-block">
+            <small>Mensagem recebida</small>
+            <p>${escapeHtml(conversation.body)}</p>
+          </div>
+          <label>
+            Sugestão da IA
+            <textarea data-ai-reply="${escapeHtml(conversation.id)}" rows="4" ${canSend ? "" : "disabled"}>${escapeHtml(conversation.aiSuggestedReply || "A IA ainda não sugeriu resposta para esta mensagem.")}</textarea>
+          </label>
+          <div class="ai-card-footer">
+            <small>${escapeHtml(formatTimeline(conversation.receivedAt))} ${conversation.aiModel ? `- ${escapeHtml(conversation.aiModel)}` : ""}</small>
+            <button class="ghost-button" type="button" data-ai-send="${escapeHtml(conversation.id)}" ${canSend ? "" : "disabled"}>
+              Enviar resposta aprovada
+            </button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function renderCondos() {
   $("#condoCards").innerHTML = state.condos
     .map((condo) => {
@@ -559,6 +632,7 @@ function renderAll() {
   renderAgentConfig();
   renderResidentSelect();
   renderMessages();
+  renderAiConversations();
   renderCondos();
   renderResidents();
   renderCashflow();
@@ -606,6 +680,54 @@ document.querySelectorAll("[data-view], [data-view-link]").forEach((button) => {
 });
 
 $("#quickChargeButton").addEventListener("click", () => setView("charges"));
+
+$("#refreshAiConversationsButton").addEventListener("click", async () => {
+  try {
+    const data = await requestJson("/api/whatsapp-conversations");
+    state.aiConversations = data.conversations || [];
+    renderAiConversations();
+    setNotice("Conversas de WhatsApp atualizadas.", "success");
+  } catch (error) {
+    setNotice(error.message, "error");
+  }
+});
+
+$("#aiConversationList").addEventListener("click", async (event) => {
+  const sendButton = event.target.closest("[data-ai-send]");
+
+  if (!sendButton) return;
+
+  const messageId = sendButton.dataset.aiSend;
+  const textarea = document.querySelector(`[data-ai-reply="${CSS.escape(messageId)}"]`);
+  const message = textarea?.value.trim() || "";
+  const previousLabel = sendButton.textContent;
+
+  if (!message) {
+    setNotice("A resposta aprovada não pode ficar vazia.", "error");
+    return;
+  }
+
+  sendButton.disabled = true;
+  sendButton.textContent = "Enviando...";
+
+  try {
+    await requestJson("/api/whatsapp-conversations", {
+      method: "POST",
+      body: JSON.stringify({
+        action: "send_reply",
+        messageId,
+        message,
+      }),
+    });
+    await loadAppData({ silent: true });
+    setNotice("Resposta aprovada enviada pelo WhatsApp.", "success");
+  } catch (error) {
+    setNotice(error.message, "error");
+  } finally {
+    sendButton.disabled = false;
+    sendButton.textContent = previousLabel;
+  }
+});
 
 $("#condoFilter").addEventListener("change", (event) => {
   state.selectedCondo = event.target.value;

@@ -108,6 +108,8 @@ Status validado:
 - backend preparado para salvar mensagens recebidas pelo webhook `webhookReceived` e envios manuais na estrutura de conversas
 - camada inicial de IA via OpenRouter criada para analisar mensagens recebidas, classificar intencao e salvar sugestao de resposta, sem envio automatico
 - migracao `database/neon_mvp_migration_whatsapp_ai_analysis.sql` aplicada no Neon para registrar analise e sugestao da IA nas mensagens de WhatsApp
+- area `IA WhatsApp` criada no painel para revisar mensagens recebidas, editar sugestoes e enviar respostas aprovadas manualmente
+- vinculo de conversas tenta localizar o condomino mesmo quando o WhatsApp retorna numero brasileiro sem o nono digito
 
 ## Próximos passos
 
@@ -182,7 +184,7 @@ Proximos passos mais provaveis:
 - criar regua simples de cobranca
 - planejar agendamento de e-mails com banco e rotina agendada
 - ativar a IA em modo assistido para interpretar respostas dos condominos e sugerir respostas dentro de limites operacionais
-- criar uma visualizacao no app para revisar as sugestoes da IA antes de qualquer envio automatico
+- testar a area `IA WhatsApp` com respostas reais e aprovar manualmente as sugestoes antes de considerar automacao
 - melhorar tratamento visual para estados vazios do dashboard
 
 ## Arquivos de referencia
