@@ -1,5 +1,6 @@
 import { getSql, normalizeChannel } from "./_lib/db.js";
 import { sendEmail } from "./_lib/email.js";
+import { saveOutboundWhatsAppMessage } from "./_lib/whatsapp-conversations.js";
 import { normalizeWhatsAppRecipient, sendWhatsAppText } from "./_lib/wapi.js";
 import { allowMethods, handleApiError, readJsonBody, sendJson } from "./_lib/http.js";
 
@@ -208,12 +209,23 @@ export default async function handler(req, res) {
       status: delivery.status,
       externalMessageId: delivery.externalMessageId,
     });
+    let conversation = null;
+
+    if (channel === "whatsapp") {
+      conversation = await saveOutboundWhatsAppMessage(sql, resident, {
+        messageLogId: log.id,
+        message,
+        recipient,
+        externalMessageId: delivery.externalMessageId,
+      });
+    }
 
     sendJson(res, 201, {
       ok: true,
       id: log.id,
       status: delivery.status,
       externalMessageId: delivery.externalMessageId,
+      conversation,
     });
   } catch (error) {
     handleApiError(res, error);

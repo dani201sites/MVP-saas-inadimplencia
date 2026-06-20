@@ -62,12 +62,13 @@ Deve mostrar:
 - status de cada agente
 - fila de mensagens por canal
 - tom configurado por canal
+- indicacao clara quando um canal ainda nao esta integrado
 
 Tambem deve permitir:
 
 - editar mensagem base
 - definir tom padrao
-- simular configuracao do comportamento da IA
+- configurar a mensagem usada na geracao da cobranca
 
 ### 4. Gestao de cobrancas
 
@@ -77,7 +78,8 @@ Deve permitir:
 - escolher o canal de envio
 - gerar uma mensagem de cobranca usando o template configurado do agente
 - enviar cobranca real por e-mail
-- bloquear WhatsApp e SMS enquanto nao estiverem integrados
+- enviar cobranca real por WhatsApp via W-API quando o condomino possuir telefone cadastrado
+- bloquear SMS enquanto nao estiver integrado
 - registrar o envio no historico
 
 Historico deve mostrar:
@@ -156,10 +158,14 @@ Objetivo:
 
 - os dados podem ser simulados
 - o envio por e-mail pode ser real via Resend
-- WhatsApp e SMS devem ficar sinalizados como indisponiveis ate a integracao existir
+- o envio por WhatsApp pode ser real via W-API
+- SMS deve ficar sinalizado como indisponivel ate a integracao existir
 - os status podem ser simulados
 - o backend atual e serverless na Vercel para operacoes do MVP
 - nao e necessario login real nesta etapa
+- mensagens recebidas pelo WhatsApp ainda nao devem acionar IA automaticamente nesta fase
+- respostas de IA so devem ser implementadas depois de salvar e auditar mensagens recebidas
+- a primeira integracao com LLM deve operar em modo assistido, sugerindo respostas antes de enviar automaticamente
 
 ## Regras que nao fazem parte deste MVP
 
@@ -170,6 +176,7 @@ Objetivo:
 - integracao real com Evolution API
 - automacao real de envio
 - leitura real de respostas
+- resposta automatica de IA para conversas recebidas
 - banco de dados final de producao
 
 ## Criterios de validacao do MVP
@@ -182,12 +189,15 @@ O MVP sera considerado validado nesta fase se:
 4. a separacao por condominio estiver clara
 5. as areas de WhatsApp, e-mail e SMS estiverem representadas
 6. o dashboard passar percepcao de organizacao operacional
+7. o envio manual por WhatsApp puder ser demonstrado com numero de teste conectado na W-API
 
 ## Proximos passos provaveis apos esta fase
 
-1. conectar o frontend aos endpoints da `Vercel`
-2. usar o `Neon Postgres` como banco persistente do MVP
-3. criar tela mais detalhada por condominio
-4. criar regua de cobranca simples
-5. validar o MVP publicado na `Vercel`
-6. depois iniciar backend e integracoes reais de canais
+1. cadastrar dados reais de demonstracao no painel publicado
+2. evoluir a visao individual por condominio alem do filtro operacional atual
+3. salvar mensagens recebidas pelo WhatsApp como conversa estruturada
+4. implementar agente de IA com limites para responder promessas de pagamento e duvidas simples
+5. criar regua simples de cobranca
+6. planejar agendamento de e-mails e WhatsApp com banco e rotina agendada
+7. melhorar estados vazios e mensagens de erro da interface
+8. depois iniciar integracao real de SMS

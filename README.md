@@ -1,6 +1,6 @@
 # MVP Agente de IA para Administradoras Condominiais
 
-Projeto em fase inicial de planejamento para criar agentes de inteligência artificial voltados a administradoras condominiais.
+Projeto em fase de MVP funcional para criar agentes de inteligência artificial voltados a administradoras condominiais.
 
 ## Visão geral
 
@@ -10,7 +10,7 @@ O sistema terá como objetivo automatizar comunicações relacionadas a pagament
 
 Construir uma demonstração funcional para apresentar a administradoras condominiais, mostrando como agentes de IA podem apoiar processos de comunicação e cobrança de forma organizada, escalável e com operação simples.
 
-Neste momento, o foco do projeto e manter um MVP funcional para demonstracao, com painel administrativo, persistencia no Neon Postgres e envio real de cobrancas por e-mail via Resend.
+Neste momento, o foco do projeto e manter um MVP funcional para demonstracao, com painel administrativo, persistencia no Neon Postgres, envio real de cobrancas por e-mail via Resend e envio real de WhatsApp via W-API em fase de teste.
 
 ## Contexto do projeto
 
@@ -26,7 +26,7 @@ Além da cobrança, o sistema também poderá evoluir para outras comunicações
 
 ## Escopo atual do MVP
 
-O MVP atual e uma demonstracao visual e funcional com banco persistente. O canal de e-mail ja possui envio real; WhatsApp e SMS seguem representados no painel, mas ainda indisponiveis para envio.
+O MVP atual e uma demonstracao visual e funcional com banco persistente. O canal de e-mail ja possui envio real; WhatsApp foi conectado via W-API para envio manual de cobrancas; SMS segue representado no painel, mas ainda indisponivel para envio.
 
 O painel deve permitir:
 
@@ -64,11 +64,13 @@ Ou seja:
 
 ## Estrutura atual do MVP
 
-- backend com `Node.js` e `TypeScript`
+- backend serverless em `api/` com `Node.js`
 - banco de dados com `Neon Postgres`
 - frontend em `Vite`
+- envio de e-mail com `Resend`
+- envio de WhatsApp com `W-API`
 - possibilidade de migracao futura para `Next.js`, se fizer sentido
-- integração futura com plataformas como `Ucondo` ou `Superlógica`
+- integracao futura com plataformas como `Ucondo` ou `Superlógica`
 
 ## Status atual
 
@@ -78,16 +80,17 @@ Ja existe uma primeira demonstracao funcional publicada com:
 
 - login simples
 - dashboard
-- cadastro de condominios
+- cadastro e edicao de condominios
 - cadastro e edicao de condominos com e-mail e telefone
 - painel de agentes
 - tela de cobrancas com envio real por e-mail
+- tela de cobrancas com envio real por WhatsApp via W-API
 - historico de mensagens com status e destinatario
 - fluxo de caixa simples
 - estrutura pronta para deploy simples na `Vercel`
 - persistencia no `Neon Postgres` via endpoints serverless em `api/`
 
-WhatsApp, SMS e automacoes ainda nao fazem parte desta etapa funcional. Esses canais aparecem como "em breve" para preservar a demonstracao do produto sem parecer erro operacional.
+SMS e automacoes ainda nao fazem parte desta etapa funcional. O WhatsApp ja pode ser usado para envio manual de cobrancas, mas a conversa automatizada com IA ainda nao foi implementada.
 
 Status validado:
 
@@ -97,6 +100,12 @@ Status validado:
 - tabelas operacionais sem dados iniciais: `condominiums`, `residents`, `billing_records`, `message_logs` e `cashflow_monthly`
 - agentes de canal mantidos em `message_agents` para preservar WhatsApp, e-mail e SMS no painel
 - migracao `database/neon_mvp_migration_message_recipient.sql` aplicada no Neon para registrar destinatario real no historico
+- endpoint `api/wapi/webhook.js` criado para receber eventos da W-API com segredo em query string
+- endpoint `api/wapi/diagnostics.js` criado para validar variaveis, status da instancia e fila de mensagens da W-API
+- envio manual por WhatsApp validado com a instancia LITE de teste da W-API
+- durante o periodo de teste, a W-API adiciona automaticamente um aviso de "INSTANCIA DE TESTE" antes da mensagem enviada
+- migracao `database/neon_mvp_migration_whatsapp_conversations.sql` aplicada no Neon para preparar conversas de WhatsApp
+- backend preparado para salvar mensagens recebidas pelo webhook `webhookReceived` e envios manuais na estrutura de conversas
 
 ## Próximos passos
 
@@ -142,6 +151,8 @@ Configuracao obrigatoria na `Vercel`:
 
 - criar a variavel de ambiente `DATABASE_URL`
 - usar a connection string real do `Neon`
+- criar `RESEND_API_KEY`, `EMAIL_FROM` e `EMAIL_SEND_MODE=live` para envio real de e-mail
+- criar `WAPI_INSTANCE_ID`, `WAPI_TOKEN`, `WAPI_SEND_MODE=live`, `WAPI_DEFAULT_DELAY_SECONDS` e `WAPI_WEBHOOK_SECRET` para envio real de WhatsApp
 - marcar pelo menos `Production`; `Preview` tambem pode ser marcado
 - fazer novo deploy depois de salvar a variavel
 
@@ -152,6 +163,8 @@ Teste minimo depois do deploy:
 - confirmar nos logs da `Vercel` que `/api/bootstrap` retorna `200`
 - cadastrar um condominio ou condomino de teste
 - atualizar a pagina e confirmar que o dado continuou salvo
+- abrir `/api/wapi/diagnostics?secret=SEU_SEGREDO` e confirmar que a W-API reconhece a instancia conectada
+- enviar uma cobranca pequena por WhatsApp para um numero de teste com formato `55` + DDD + numero, sem espacos ou simbolos
 
 Se o app ficar preso na tela de login, olhar primeiro os logs da funcao `/api/bootstrap` na `Vercel`.
 
@@ -162,6 +175,10 @@ Proximos passos mais provaveis:
 - cadastrar dados reais de demonstracao pelo painel publicado
 - evoluir a visao individual por condominio alem do filtro operacional atual
 - criar regua simples de cobranca
+- planejar agendamento de e-mails com banco e rotina agendada
+- salvar mensagens recebidas pelo WhatsApp em estrutura de conversa antes de ativar IA conversacional
+- implementar agente de IA para interpretar respostas dos condominos e sugerir ou enviar respostas dentro de limites operacionais
+- integrar uma LLM via OpenRouter somente depois que as conversas recebidas estiverem sendo salvas e vinculadas ao condomino correto
 - melhorar tratamento visual para estados vazios do dashboard
 
 ## Arquivos de referencia

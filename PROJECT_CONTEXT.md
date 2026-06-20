@@ -15,11 +15,13 @@ Nesta etapa, estamos priorizando:
 - fluxos claros de cobranca
 - organizacao por condominio
 - envio real por e-mail com operacao simples
+- envio real por WhatsApp via W-API em fluxo manual controlado
 
 Ainda nao estamos priorizando:
 
 - backend completo de producao
 - automacoes reais em canais externos
+- resposta automatica por IA em conversas recebidas
 - arquitetura final escalavel
 - autenticacao complexa
 - multiempresa compartilhada
@@ -40,11 +42,18 @@ O sistema deve ajudar administradoras a:
 ## Estado funcional atual
 
 - O canal de e-mail esta ativo com envio via Resend.
-- WhatsApp e SMS permanecem no painel como canais futuros, bloqueados para envio no MVP atual.
+- O canal de WhatsApp esta ativo para envio manual via W-API.
+- SMS permanece no painel como canal futuro, bloqueado para envio no MVP atual.
 - Condominios e condominos podem ser cadastrados e editados.
 - Condominios podem ser visualizados por filtro operacional.
-- Condominios possuem condominio, unidade, status, mensalidade, e-mail e telefone.
+- Condominios possuem nome, bairro/regiao, quantidade de unidades e taxa media.
+- Condominos possuem condominio, unidade, status, mensalidade, e-mail e telefone.
 - O historico de mensagens registra status e destinatario quando disponivel.
+- Webhooks da W-API apontam para o backend em `api/wapi/webhook.js`, protegidos por `WAPI_WEBHOOK_SECRET`.
+- A rota `api/wapi/diagnostics.js` permite conferir configuracao, status da instancia e fila da W-API.
+- A instancia atual e LITE em periodo de teste; por isso a W-API adiciona aviso automatico de instancia de teste nas mensagens.
+- A estrutura de conversas do WhatsApp foi criada no Neon e o backend foi preparado localmente para salvar mensagens recebidas em `whatsapp_conversation_messages`.
+- Envios manuais por WhatsApp tambem passam a ser gravados na estrutura de conversa, alem do historico operacional em `message_logs`.
 
 ## Regra critica sobre arquitetura
 
@@ -69,6 +78,7 @@ Isso deve evitar que decisoes futuras empurrem o projeto para uma arquitetura ma
 - backend serverless em `api/` com `Node.js`
 - banco do MVP com `Neon Postgres`
 - envio de e-mail com `Resend`
+- envio de WhatsApp com `W-API`
 - integracoes futuras com `WhatsApp`, `SMS` e possivelmente `Ucondo` ou `Superlogica`
 
 ## Forma de validacao do MVP
@@ -79,6 +89,7 @@ Este MVP precisa ser validado principalmente por:
 - fluxo de uso simples
 - telas que mostrem valor comercial
 - envio real de cobranca por e-mail
+- envio real de cobranca por WhatsApp
 - organizacao por condominio
 - facilidade de demonstracao para administradoras
 
@@ -91,6 +102,7 @@ Nao devemos confundir:
 - simulacao de envio com integracao real
 - MVP dedicado com plataforma multiempresa
 - painel visual com operacao completa de backend
+- envio manual por WhatsApp com conversa automatica por IA
 
 ## Decisoes atuais registradas
 
@@ -99,6 +111,11 @@ Nao devemos confundir:
 - preparar o MVP para exibicao local e deploy simples na `Vercel`
 - evitar complexidade desnecessaria
 - manter o foco em cobranca e inadimplencia
+- manter SMS sinalizado como indisponivel ate existir integracao real
+- manter WhatsApp em fluxo manual controlado antes de qualquer automacao
+- nao ativar IA conversacional ate que mensagens recebidas estejam salvas e auditaveis
+- usar LLM primeiro como sugestao assistida, antes de liberar resposta automatica direta no WhatsApp
+- nao mexer no fluxo de caixa por enquanto sem necessidade clara de banco
 
 ## Proximas referencias
 

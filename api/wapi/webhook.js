@@ -1,4 +1,5 @@
 import { getSql } from "../_lib/db.js";
+import { saveInboundWhatsAppMessage } from "../_lib/whatsapp-conversations.js";
 import { allowMethods, handleApiError, readJsonBody, sendJson } from "../_lib/http.js";
 
 function getQueryValue(req, key) {
@@ -73,17 +74,23 @@ export default async function handler(req, res) {
     const sql = getSql();
     const event = String(payload.event || "unknown");
     let result = { matched: 0, externalMessageId: null, status: null };
+    let conversation = null;
 
     if (["webhookDelivery", "webhookMessageStatus"].includes(event)) {
       result = await updateMessageStatus(sql, payload);
     }
 
+    if (event === "webhookReceived") {
+      conversation = await saveInboundWhatsAppMessage(sql, payload);
+    }
+
     sendJson(res, 200, {
       ok: true,
       event,
-      handled: result.matched > 0,
+      handled: result.matched > 0 || Boolean(conversation?.saved),
       externalMessageId: result.externalMessageId,
       status: result.status,
+      conversation,
     });
   } catch (error) {
     handleApiError(res, error);
