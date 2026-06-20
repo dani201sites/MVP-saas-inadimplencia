@@ -203,6 +203,7 @@ export async function saveInboundWhatsAppMessage(sql, payload) {
     conversationId: conversation.id,
     messageId: inserted[0]?.id || null,
     residentId: resident?.id || null,
+    body,
   };
 }
 

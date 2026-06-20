@@ -54,6 +54,9 @@ O sistema deve ajudar administradoras a:
 - A instancia atual e LITE em periodo de teste; por isso a W-API adiciona aviso automatico de instancia de teste nas mensagens.
 - A estrutura de conversas do WhatsApp foi criada no Neon e o backend foi preparado localmente para salvar mensagens recebidas em `whatsapp_conversation_messages`.
 - Envios manuais por WhatsApp tambem passam a ser gravados na estrutura de conversa, alem do historico operacional em `message_logs`.
+- A primeira camada de IA via OpenRouter foi criada para analisar mensagens recebidas, classificar intencao e gerar sugestao curta, mas fica desligada enquanto `OPENROUTER_AI_ENABLED` nao estiver como `true`.
+- O modelo inicial escolhido para baixo custo e `google/gemini-2.5-flash-lite`.
+- A migracao de analise da IA foi aplicada no Neon, adicionando campos para intencao, confianca, sugestao e modelo usado em `whatsapp_conversation_messages`.
 
 ## Regra critica sobre arquitetura
 
@@ -115,6 +118,7 @@ Nao devemos confundir:
 - manter WhatsApp em fluxo manual controlado antes de qualquer automacao
 - nao ativar IA conversacional ate que mensagens recebidas estejam salvas e auditaveis
 - usar LLM primeiro como sugestao assistida, antes de liberar resposta automatica direta no WhatsApp
+- nao enviar resposta automatica da IA no WhatsApp nesta etapa; primeiro salvar e revisar a sugestao
 - nao mexer no fluxo de caixa por enquanto sem necessidade clara de banco
 
 ## Proximas referencias

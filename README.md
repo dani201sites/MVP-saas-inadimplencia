@@ -10,7 +10,7 @@ O sistema terá como objetivo automatizar comunicações relacionadas a pagament
 
 Construir uma demonstração funcional para apresentar a administradoras condominiais, mostrando como agentes de IA podem apoiar processos de comunicação e cobrança de forma organizada, escalável e com operação simples.
 
-Neste momento, o foco do projeto e manter um MVP funcional para demonstracao, com painel administrativo, persistencia no Neon Postgres, envio real de cobrancas por e-mail via Resend e envio real de WhatsApp via W-API em fase de teste.
+Neste momento, o foco do projeto e manter um MVP funcional para demonstracao, com painel administrativo, persistencia no Neon Postgres, envio real de cobrancas por e-mail via Resend, envio real de WhatsApp via W-API em fase de teste e primeira camada de IA via OpenRouter em modo assistido.
 
 ## Contexto do projeto
 
@@ -106,6 +106,8 @@ Status validado:
 - durante o periodo de teste, a W-API adiciona automaticamente um aviso de "INSTANCIA DE TESTE" antes da mensagem enviada
 - migracao `database/neon_mvp_migration_whatsapp_conversations.sql` aplicada no Neon para preparar conversas de WhatsApp
 - backend preparado para salvar mensagens recebidas pelo webhook `webhookReceived` e envios manuais na estrutura de conversas
+- camada inicial de IA via OpenRouter criada para analisar mensagens recebidas, classificar intencao e salvar sugestao de resposta, sem envio automatico
+- migracao `database/neon_mvp_migration_whatsapp_ai_analysis.sql` aplicada no Neon para registrar analise e sugestao da IA nas mensagens de WhatsApp
 
 ## Próximos passos
 
@@ -153,6 +155,8 @@ Configuracao obrigatoria na `Vercel`:
 - usar a connection string real do `Neon`
 - criar `RESEND_API_KEY`, `EMAIL_FROM` e `EMAIL_SEND_MODE=live` para envio real de e-mail
 - criar `WAPI_INSTANCE_ID`, `WAPI_TOKEN`, `WAPI_SEND_MODE=live`, `WAPI_DEFAULT_DELAY_SECONDS` e `WAPI_WEBHOOK_SECRET` para envio real de WhatsApp
+- criar `OPENROUTER_API_KEY`, `OPENROUTER_MODEL=google/gemini-2.5-flash-lite`, `OPENROUTER_APP_NAME` e `OPENROUTER_SITE_URL` para a camada de IA
+- manter `OPENROUTER_AI_ENABLED=false` ate o primeiro teste controlado da IA ser autorizado
 - marcar pelo menos `Production`; `Preview` tambem pode ser marcado
 - fazer novo deploy depois de salvar a variavel
 
@@ -165,6 +169,7 @@ Teste minimo depois do deploy:
 - atualizar a pagina e confirmar que o dado continuou salvo
 - abrir `/api/wapi/diagnostics?secret=SEU_SEGREDO` e confirmar que a W-API reconhece a instancia conectada
 - enviar uma cobranca pequena por WhatsApp para um numero de teste com formato `55` + DDD + numero, sem espacos ou simbolos
+- para testar IA, ligar `OPENROUTER_AI_ENABLED=true`, responder uma mensagem no WhatsApp e conferir se a ultima mensagem recebeu `ai_intent` e `ai_suggested_reply`
 
 Se o app ficar preso na tela de login, olhar primeiro os logs da funcao `/api/bootstrap` na `Vercel`.
 
@@ -176,9 +181,8 @@ Proximos passos mais provaveis:
 - evoluir a visao individual por condominio alem do filtro operacional atual
 - criar regua simples de cobranca
 - planejar agendamento de e-mails com banco e rotina agendada
-- salvar mensagens recebidas pelo WhatsApp em estrutura de conversa antes de ativar IA conversacional
-- implementar agente de IA para interpretar respostas dos condominos e sugerir ou enviar respostas dentro de limites operacionais
-- integrar uma LLM via OpenRouter somente depois que as conversas recebidas estiverem sendo salvas e vinculadas ao condomino correto
+- ativar a IA em modo assistido para interpretar respostas dos condominos e sugerir respostas dentro de limites operacionais
+- criar uma visualizacao no app para revisar as sugestoes da IA antes de qualquer envio automatico
 - melhorar tratamento visual para estados vazios do dashboard
 
 ## Arquivos de referencia

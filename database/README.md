@@ -21,6 +21,7 @@ Se o banco já existir no Neon, rode também:
 
 - `database/neon_mvp_migration_message_recipient.sql`: adiciona o destinatário real no histórico de mensagens.
 - `database/neon_mvp_migration_whatsapp_conversations.sql`: cria conversas e mensagens recebidas/enviadas do WhatsApp para futura IA conversacional.
+- `database/neon_mvp_migration_whatsapp_ai_analysis.sql`: adiciona campos de analise da IA nas mensagens de WhatsApp e expõe a ultima sugestao na view de conversas.
 
 ## Tabelas principais
 
@@ -31,7 +32,7 @@ Se o banco já existir no Neon, rode também:
 - `message_agents`: configuração dos canais de cobrança
 - `message_logs`: histórico de mensagens, status de envio e destinatário
 - `whatsapp_conversations`: conversa por contato do WhatsApp, com vínculo opcional ao condômino
-- `whatsapp_conversation_messages`: mensagens individuais da conversa, separando entrada, saída, origem humana, IA ou sistema
+- `whatsapp_conversation_messages`: mensagens individuais da conversa, separando entrada, saída, origem humana, IA ou sistema, com campos opcionais para intencao e sugestao da IA
 - `cashflow_monthly`: resumo mensal de caixa
 
 ## Views prontas para o frontend
@@ -49,6 +50,7 @@ Se o banco já existir no Neon, rode também:
 - O fluxo de caixa aceita linhas globais do portfólio e, se quisermos depois, linhas por condomínio.
 - O envio por WhatsApp usa o mesmo `message_logs`, gravando `channel = whatsapp`, destinatario e `external_message_id` retornado pela W-API quando disponivel.
 - Para conversa bidirecional com IA, a migracao `neon_mvp_migration_whatsapp_conversations.sql` prepara as tabelas de conversa, direcao da mensagem, origem e identificadores como telefone e `senderLid`.
+- A migracao `neon_mvp_migration_whatsapp_ai_analysis.sql` ja foi aplicada no Neon antes de ligar `OPENROUTER_AI_ENABLED=true` em producao.
 
 ## Status atual do banco
 
@@ -73,5 +75,8 @@ A tabela `message_agents` foi mantida com os canais do MVP para o frontend conti
 - `api/wapi/diagnostics.js` permite validar status da instancia e fila via URL protegida.
 - O primeiro envio real por WhatsApp foi validado, com aviso automatico da W-API indicando instancia de teste.
 - A migracao `database/neon_mvp_migration_whatsapp_conversations.sql` foi aplicada no Neon e verificada com as tabelas `whatsapp_conversations`, `whatsapp_conversation_messages` e a view `v_whatsapp_conversations`.
+- A migracao `database/neon_mvp_migration_whatsapp_ai_analysis.sql` foi aplicada no Neon e verificada com os campos de IA, os indices auxiliares e as colunas `last_ai_*` da view `v_whatsapp_conversations`.
 - O backend foi preparado para gravar `webhookReceived` como mensagem `inbound` e envios manuais por WhatsApp como mensagem `outbound`.
 - A LLM via OpenRouter deve entrar depois desta camada, lendo a conversa salva para sugerir resposta ou acionar envio automatico em regras seguras.
+- A primeira integracao OpenRouter foi criada no backend em modo assistido: ela analisa apenas mensagens recebidas, classifica a intencao e salva uma sugestao curta quando `OPENROUTER_AI_ENABLED=true`.
+- Nesta fase, a IA nao envia resposta automatica pelo WhatsApp.

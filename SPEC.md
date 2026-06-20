@@ -166,6 +166,7 @@ Objetivo:
 - mensagens recebidas pelo WhatsApp ainda nao devem acionar IA automaticamente nesta fase
 - respostas de IA so devem ser implementadas depois de salvar e auditar mensagens recebidas
 - a primeira integracao com LLM deve operar em modo assistido, sugerindo respostas antes de enviar automaticamente
+- a IA via OpenRouter deve permanecer atras de uma variavel liga/desliga e nao pode enviar mensagem sozinha nesta fase
 
 ## Regras que nao fazem parte deste MVP
 
@@ -196,7 +197,7 @@ O MVP sera considerado validado nesta fase se:
 1. cadastrar dados reais de demonstracao no painel publicado
 2. evoluir a visao individual por condominio alem do filtro operacional atual
 3. salvar mensagens recebidas pelo WhatsApp como conversa estruturada
-4. implementar agente de IA com limites para responder promessas de pagamento e duvidas simples
+4. implementar interface para revisar sugestoes da IA em promessas de pagamento e duvidas simples
 5. criar regua simples de cobranca
 6. planejar agendamento de e-mails e WhatsApp com banco e rotina agendada
 7. melhorar estados vazios e mensagens de erro da interface

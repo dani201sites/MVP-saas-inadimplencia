@@ -1,4 +1,5 @@
 import { getSql } from "../_lib/db.js";
+import { analyzeInboundWhatsAppWithAi } from "../_lib/whatsapp-ai.js";
 import { saveInboundWhatsAppMessage } from "../_lib/whatsapp-conversations.js";
 import { allowMethods, handleApiError, readJsonBody, sendJson } from "../_lib/http.js";
 
@@ -75,6 +76,7 @@ export default async function handler(req, res) {
     const event = String(payload.event || "unknown");
     let result = { matched: 0, externalMessageId: null, status: null };
     let conversation = null;
+    let ai = null;
 
     if (["webhookDelivery", "webhookMessageStatus"].includes(event)) {
       result = await updateMessageStatus(sql, payload);
@@ -82,6 +84,7 @@ export default async function handler(req, res) {
 
     if (event === "webhookReceived") {
       conversation = await saveInboundWhatsAppMessage(sql, payload);
+      ai = await analyzeInboundWhatsAppWithAi(sql, conversation);
     }
 
     sendJson(res, 200, {
@@ -91,6 +94,7 @@ export default async function handler(req, res) {
       externalMessageId: result.externalMessageId,
       status: result.status,
       conversation,
+      ai,
     });
   } catch (error) {
     handleApiError(res, error);
