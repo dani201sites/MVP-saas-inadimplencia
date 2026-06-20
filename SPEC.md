@@ -169,6 +169,7 @@ Objetivo:
 - a IA via OpenRouter deve permanecer atras de uma variavel liga/desliga e nao pode enviar mensagem sozinha nesta fase
 - a area `IA WhatsApp` deve permitir revisar, editar e enviar manualmente uma resposta sugerida pela IA
 - resposta automatica da IA so pode ocorrer quando a variavel estiver ligada, a confianca minima for atingida e a intencao nao estiver bloqueada
+- a IA deve receber data atual e status temporal do vencimento calculados pelo backend, nao por valor fixo no prompt
 
 ## Regras que nao fazem parte deste MVP
 

@@ -17,6 +17,59 @@ function centsToCurrency(cents) {
   return amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function getSaoPauloDateParts(value = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return {
+    iso: `${map.year}-${map.month}-${map.day}`,
+    label: `${map.day}/${map.month}/${map.year}`,
+  };
+}
+
+function getDateDiffInDays(fromIsoDate, toIsoDate) {
+  if (!fromIsoDate || !toIsoDate) {
+    return null;
+  }
+
+  const from = new Date(`${fromIsoDate}T00:00:00Z`);
+  const to = new Date(`${toIsoDate}T00:00:00Z`);
+  const diff = Math.round((to.getTime() - from.getTime()) / 86400000);
+
+  return Number.isFinite(diff) ? diff : null;
+}
+
+function getDueDateContext(dueDate) {
+  const today = getSaoPauloDateParts();
+  const dueIso = dueDate instanceof Date
+    ? getSaoPauloDateParts(dueDate).iso
+    : String(dueDate || "").slice(0, 10);
+  const daysFromDue = getDateDiffInDays(dueIso, today.iso);
+  let status = "sem_vencimento";
+
+  if (daysFromDue !== null) {
+    if (daysFromDue < 0) status = "a_vencer";
+    if (daysFromDue === 0) status = "vence_hoje";
+    if (daysFromDue === 1) status = "venceu_ontem";
+    if (daysFromDue > 1) status = "vencido";
+  }
+
+  return {
+    timezone: "America/Sao_Paulo",
+    data_atual: today.iso,
+    data_atual_br: today.label,
+    vencimento_iso: dueIso || null,
+    dias_desde_vencimento: daysFromDue === null ? null : Math.max(0, daysFromDue),
+    dias_ate_vencimento: daysFromDue === null ? null : Math.max(0, -daysFromDue),
+    status_temporal: status,
+  };
+}
+
 function sanitizeAiResult(result) {
   const intent = INTENTS.includes(result?.intent) ? result.intent : "outro";
   const rawConfidence = Number(result?.confidence);
@@ -81,6 +134,7 @@ function buildPrompt({ message, recentMessages, mode }) {
   const residentName = message.full_name || message.contact_name || "condômino não identificado";
   const amount = centsToCurrency(message.current_amount_cents);
   const dueDate = message.due_date ? new Date(message.due_date).toLocaleDateString("pt-BR") : "não informada";
+  const dueDateContext = getDueDateContext(message.due_date);
   const history = recentMessages
     .map((item) => `${item.direction}/${item.origin}: ${item.body}`)
     .join("\n")
@@ -116,6 +170,7 @@ function buildPrompt({ message, recentMessages, mode }) {
           dias_em_atraso: message.current_days_overdue ?? null,
           valor_atual: amount,
           vencimento: dueDate,
+          contexto_temporal: dueDateContext,
         },
         historico_recente: history,
         mensagem_recebida: message.body,
@@ -123,7 +178,12 @@ function buildPrompt({ message, recentMessages, mode }) {
           "Para promessa de pagamento, agradeça e peça comprovante quando pagar.",
           "Para pagamento realizado, peça comprovante ou confirmação do setor financeiro.",
           "Para contestação, dúvida sensível ou pedido humano, marque handoff_required como true.",
-          "Para dúvida de valor, responda usando apenas o valor_atual e vencimento informados no contexto.",
+          "Para dúvida de valor, responda usando apenas valor_atual, vencimento e contexto_temporal informados pelo sistema.",
+          "Use data_atual e status_temporal para explicar se o vencimento já passou, vence hoje ou ainda vai vencer.",
+          "Se o condômino contestar uma data ou valor, compare com os dados do sistema antes de responder.",
+          "Só reconheça erro se os dados do sistema confirmarem erro ou imprecisão anterior; se apenas faltou contexto, esclareça sem pedir desculpas em excesso.",
+          "Se houver conflito que os dados do sistema não comprovem, marque handoff_required como true.",
+          "Evite repetir literalmente a resposta anterior quando o histórico já contém a mesma informação.",
           "Não diga que baixou cobrança, removeu multa ou confirmou pagamento.",
         ],
       }),

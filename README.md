@@ -111,6 +111,7 @@ Status validado:
 - area `IA WhatsApp` criada no painel para revisar mensagens recebidas, editar sugestoes e enviar respostas aprovadas manualmente
 - vinculo de conversas tenta localizar o condomino mesmo quando o WhatsApp retorna numero brasileiro sem o nono digito
 - resposta automatica da IA preparada por variaveis, com confianca minima e bloqueio para contestacao, pedido humano e pagamento realizado
+- prompt da IA recebe contexto temporal calculado pelo backend em `America/Sao_Paulo`, permitindo responder se o vencimento ja passou, vence hoje ou ainda vai vencer
 
 ## Próximos passos
 

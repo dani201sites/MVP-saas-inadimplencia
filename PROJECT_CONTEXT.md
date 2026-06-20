@@ -60,6 +60,7 @@ O sistema deve ajudar administradoras a:
 - A area `IA WhatsApp` do painel permite revisar a mensagem recebida, editar a sugestao da IA e enviar a resposta aprovada manualmente.
 - A vinculacao por telefone considera a variacao brasileira com e sem o nono digito apos o DDD.
 - A resposta automatica da IA pode ser liberada por `OPENROUTER_AI_AUTOREPLY_ENABLED=true`, respeitando confianca minima e bloqueios de seguranca.
+- O backend calcula a data atual em `America/Sao_Paulo` e envia contexto temporal para a IA comparar vencimento, atraso e contestacoes do condomino.
 
 ## Regra critica sobre arquitetura
 
@@ -124,6 +125,7 @@ Nao devemos confundir:
 - manter resposta automatica atras de variavel de ambiente, permitindo desligar a IA sem alterar codigo
 - quando a resposta automatica estiver desligada, respostas sugeridas pela IA so devem sair pelo WhatsApp apos clique manual do operador na area `IA WhatsApp`
 - quando a resposta automatica estiver ligada, bloquear contestacao, pedido humano e pagamento realizado; nesses casos deve seguir para revisao humana
+- se o condomino contestar data ou valor, a IA deve comparar com dados do sistema antes de reconhecer erro; se o sistema nao comprovar, deve encaminhar para humano
 - nao mexer no fluxo de caixa por enquanto sem necessidade clara de banco
 
 ## Proximas referencias
