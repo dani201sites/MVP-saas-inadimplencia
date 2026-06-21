@@ -85,6 +85,7 @@ Ja existe uma primeira demonstracao funcional publicada com:
 - painel de agentes
 - tela de cobrancas com envio real por e-mail
 - tela de cobrancas com envio real por WhatsApp via W-API
+- aba `Configurações > Cobranças de teste` com envio real por e-mail ou WhatsApp usando condômino base e destinatário manual
 - historico de mensagens com status e destinatario
 - fluxo de caixa simples
 - estrutura pronta para deploy simples na `Vercel`
@@ -113,6 +114,7 @@ Status validado:
 - resposta automatica da IA preparada por variaveis, com confianca minima e bloqueio para contestacao, pedido humano e pagamento realizado
 - prompt da IA recebe contexto temporal calculado pelo backend em `America/Sao_Paulo`, permitindo responder se o vencimento ja passou, vence hoje ou ainda vai vencer
 - webhooks de status do WhatsApp, como `status@broadcast`, devem ser ignorados para nao aparecerem na area `IA WhatsApp` nem acionarem resposta automatica
+- cobrancas de teste sao salvas no mesmo `message_logs`, com assunto iniciado por `Teste -`, sem exigir nova migracao de banco nesta etapa
 - SMS permanece apenas como canal futuro representado no painel; nao faz parte da operacao real prevista para este MVP
 
 ## Próximos passos
@@ -176,6 +178,7 @@ Teste minimo depois do deploy:
 - atualizar a pagina e confirmar que o dado continuou salvo
 - abrir `/api/wapi/diagnostics?secret=SEU_SEGREDO` e confirmar que a W-API reconhece a instancia conectada
 - enviar uma cobranca pequena por WhatsApp para um numero de teste com formato `55` + DDD + numero, sem espacos ou simbolos
+- em `Configurações > Cobranças de teste`, selecionar um condômino base, informar e-mail ou telefone de teste e confirmar que o envio aparece no histórico com etiqueta `Teste`
 - para testar IA, ligar `OPENROUTER_AI_ENABLED=true`, responder uma mensagem no WhatsApp e conferir se a ultima mensagem recebeu `ai_intent` e `ai_suggested_reply`
 - para testar resposta automatica, ligar `OPENROUTER_AI_AUTOREPLY_ENABLED=true` somente depois do deploy e mandar uma mensagem simples, como promessa de pagamento ou duvida de valor
 

@@ -547,6 +547,17 @@ form button:disabled {
   background: var(--ok-bg);
 }
 
+.pill.warning {
+  color: #8a5a00;
+  background: #fff4cf;
+}
+
+.history-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .history-subject {
   display: block;
   margin: -2px 0 8px;

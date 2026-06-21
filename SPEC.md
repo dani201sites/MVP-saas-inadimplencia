@@ -23,6 +23,7 @@ O MVP deve conter as seguintes areas:
 6. Cadastro de condominos
 7. Visao individual por condominio
 8. Fluxo de caixa simples
+9. Configuracoes com calendario de cobranca e cobrancas de teste
 
 ## Telas do MVP
 
@@ -90,6 +91,15 @@ Historico deve mostrar:
 - destinatario quando disponivel
 - conteudo da mensagem
 - horario do envio
+
+Tambem deve existir uma area de teste em `Configurações > Cobranças de teste` para:
+
+- selecionar canal de teste
+- selecionar tipo de mensagem
+- selecionar um condomino base
+- informar destinatario manual de teste
+- enviar teste real por e-mail ou WhatsApp
+- registrar o teste no historico com etiqueta visual
 
 ### 5. Cadastro de condominios
 
@@ -159,6 +169,7 @@ Objetivo:
 - os dados podem ser simulados
 - o envio por e-mail pode ser real via Resend
 - o envio por WhatsApp pode ser real via W-API
+- cobrancas de teste usam o mesmo endpoint de envio real e o mesmo historico `message_logs`
 - SMS deve ficar sinalizado como indisponivel ate a integracao existir
 - os status podem ser simulados
 - o backend atual e serverless na Vercel para operacoes do MVP

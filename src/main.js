@@ -10,7 +10,6 @@ const state = {
   messages: [],
   aiConversations: [],
   billingCalendar: [],
-  testCharges: [],
   cashflow: [],
   hasLoaded: false,
   editingCondoId: null,
@@ -133,19 +132,6 @@ function formatCalendarOffset(offset) {
 
 function saveBillingCalendar() {
   localStorage.setItem("billingCalendar", JSON.stringify(state.billingCalendar));
-}
-
-function saveTestCharges() {
-  localStorage.setItem("testCharges", JSON.stringify(state.testCharges));
-}
-
-function loadTestCharges() {
-  try {
-    const stored = JSON.parse(localStorage.getItem("testCharges") || "[]");
-    state.testCharges = Array.isArray(stored) ? stored : [];
-  } catch {
-    state.testCharges = [];
-  }
 }
 
 function loadBillingCalendar() {
@@ -421,7 +407,7 @@ function renderResidentSelect() {
 
 function renderTestChargeResidentSelect() {
   $("#testChargeResident").innerHTML = [
-    `<option value="">Sem condômino específico</option>`,
+    `<option value="">Selecione um condômino base</option>`,
     ...state.residents.map((resident) => `<option value="${escapeHtml(resident.id)}">${escapeHtml(resident.name)} - ${escapeHtml(resident.unit)}</option>`),
   ].join("");
 }
@@ -515,7 +501,10 @@ function renderMessages() {
         <div class="history-item">
           <div class="history-top">
             <strong>${escapeHtml(message.resident)}</strong>
-            <span class="pill ${escapeHtml(getMessageStatusClass(message.status))}">${escapeHtml(getMessageStatusLabel(message.status))}</span>
+            <span class="history-badges">
+              ${message.isTest ? `<span class="pill warning">Teste</span>` : ""}
+              <span class="pill ${escapeHtml(getMessageStatusClass(message.status))}">${escapeHtml(getMessageStatusLabel(message.status))}</span>
+            </span>
           </div>
           <div class="history-meta">
             <span>${escapeHtml(getChannelLabel(message.channel))}</span>
@@ -723,29 +712,36 @@ function renderBillingCalendar() {
 }
 
 function renderTestChargeHistory() {
-  if (!state.testCharges.length) {
+  const tests = state.messages.filter((message) => message.isTest);
+
+  if (!tests.length) {
     $("#testChargeHistory").innerHTML = `
       <div class="empty-state">
-        <strong>Nenhum teste registrado ainda.</strong>
-        <p>Use esta área para simular mensagens dos agentes antes da régua automática existir.</p>
+        <strong>Nenhum teste enviado ainda.</strong>
+        <p>Use esta área para enviar testes reais por e-mail ou WhatsApp antes da régua automática existir.</p>
       </div>
     `;
     return;
   }
 
-  $("#testChargeHistory").innerHTML = state.testCharges
+  $("#testChargeHistory").innerHTML = tests
     .map(
-      (test) => `
+      (message) => `
         <div class="history-item">
           <div class="history-top">
-            <strong>${escapeHtml(test.kind)}</strong>
-            <span class="pill">${escapeHtml(getChannelLabel(test.channel))}</span>
+            <strong>${escapeHtml(message.resident)}</strong>
+            <span class="history-badges">
+              <span class="pill warning">Teste</span>
+              <span class="pill ${escapeHtml(getMessageStatusClass(message.status))}">${escapeHtml(getMessageStatusLabel(message.status))}</span>
+            </span>
           </div>
           <div class="history-meta">
-            <span>${escapeHtml(test.recipient)}</span>
-            <span>${escapeHtml(formatTimeline(test.createdAt))}</span>
+            <span>${escapeHtml(getChannelLabel(message.channel))}</span>
+            ${message.recipient ? `<span>${escapeHtml(message.recipient)}</span>` : ""}
+            <span>${escapeHtml(formatTimeline(message.sentAt))}</span>
           </div>
-          <p>${escapeHtml(test.message)}</p>
+          ${message.subject ? `<small class="history-subject">${escapeHtml(message.subject)}</small>` : ""}
+          <p>${escapeHtml(message.text)}</p>
         </div>
       `,
     )
@@ -1021,27 +1017,52 @@ document.querySelectorAll("[data-settings-tab]").forEach((button) => {
   });
 });
 
-$("#testChargeForm").addEventListener("submit", (event) => {
+$("#testChargeForm").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button[type='submit']");
+  const previousLabel = button.textContent;
 
   const resident = getResidentById($("#testChargeResident").value);
+  const channel = $("#testChargeChannel").value;
+  const recipient = $("#testChargeRecipient").value.trim();
   const rawMessage = $("#testChargeMessage").value.trim();
-  const message = rawMessage
-    .replaceAll("{{nome}}", resident?.name || "Condômino teste")
-    .replaceAll("{{unidade}}", resident?.unit || "Unidade teste")
-    .replaceAll("{{condominio}}", resident ? getCondoName(resident.condoId) : "Condomínio teste");
 
-  state.testCharges.unshift({
-    channel: $("#testChargeChannel").value,
-    kind: $("#testChargeKind").value,
-    recipient: $("#testChargeRecipient").value.trim(),
-    message,
-    createdAt: new Date().toISOString(),
-  });
-  state.testCharges = state.testCharges.slice(0, 12);
-  saveTestCharges();
-  renderTestChargeHistory();
-  setNotice("Teste registrado localmente. Nenhum envio real foi disparado.", "success");
+  if (!resident) {
+    setNotice("Selecione um condômino base para registrar o teste no histórico.", "error");
+    return;
+  }
+
+  const message = rawMessage
+    .replaceAll("{{nome}}", resident.name)
+    .replaceAll("{{unidade}}", resident.unit)
+    .replaceAll("{{condominio}}", getCondoName(resident.condoId));
+
+  button.disabled = true;
+  button.textContent = "Enviando...";
+
+  try {
+    await requestJson("/api/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        residentId: resident.id,
+        channel,
+        emailTo: channel === "email" ? recipient : "",
+        whatsappTo: channel === "whatsapp" ? recipient : "",
+        message,
+        isTest: true,
+        testKind: $("#testChargeKind").value,
+      }),
+    });
+
+    await loadAppData({ silent: true });
+    setNotice(`Teste por ${getChannelLabel(channel)} enviado e salvo no histórico.`, "success");
+  } catch (error) {
+    setNotice(error.message, "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = previousLabel;
+  }
 });
 
 $("#chargeForm").addEventListener("submit", async (event) => {
@@ -1076,7 +1097,6 @@ $("#chargeForm").addEventListener("submit", async (event) => {
 });
 
 loadBillingCalendar();
-loadTestCharges();
 $("#themeSelect").value = localStorage.getItem("theme") || "light";
 applyTheme($("#themeSelect").value);
 

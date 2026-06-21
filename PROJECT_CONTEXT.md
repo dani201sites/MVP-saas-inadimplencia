@@ -49,6 +49,7 @@ O sistema deve ajudar administradoras a:
 - Condominios possuem nome, bairro/regiao, quantidade de unidades e taxa media.
 - Condominos possuem condominio, unidade, status, mensalidade, e-mail e telefone.
 - O historico de mensagens registra status e destinatario quando disponivel.
+- A aba `Configurações > Cobranças de teste` envia testes reais por e-mail ou WhatsApp, usando um condômino base para contexto e um destinatário manual.
 - Webhooks da W-API apontam para o backend em `api/wapi/webhook.js`, protegidos por `WAPI_WEBHOOK_SECRET`.
 - A rota `api/wapi/diagnostics.js` permite conferir configuracao, status da instancia e fila da W-API.
 - A instancia atual e LITE em periodo de teste; por isso a W-API adiciona aviso automatico de instancia de teste nas mensagens.
@@ -130,6 +131,7 @@ Nao devemos confundir:
 - SMS deve permanecer fora do escopo operacional real deste MVP, ficando apenas como canal futuro representado no painel
 - a direcao do produto real e substituir boa parte do envio manual por uma regua automatica baseada no vencimento de cada fatura, com datas calculadas pelo sistema e disparos controlados por regras configuraveis
 - nao mexer no fluxo de caixa por enquanto sem necessidade clara de banco
+- testes de cobrança devem reaproveitar `message_logs` e marcar o assunto com `Teste -`, evitando nova tabela enquanto o MVP nao tiver régua automática real
 
 ## Proximas referencias
 

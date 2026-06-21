@@ -151,7 +151,10 @@ export default async function handler(req, res) {
     const residentId = String(body.residentId || "").trim();
     const channel = normalizeChannel(body.channel);
     const emailTo = String(body.emailTo || "").trim();
+    const whatsappTo = String(body.whatsappTo || "").trim();
     const message = String(body.message || "").trim();
+    const isTest = Boolean(body.isTest);
+    const testKind = String(body.testKind || "").trim();
 
     if (channel === "sms") {
       throw Object.assign(new Error("SMS ainda não está disponível. Use e-mail ou WhatsApp por enquanto."), { statusCode: 400 });
@@ -163,8 +166,11 @@ export default async function handler(req, res) {
 
     const sql = getSql();
     const resident = await findResidentContext(sql, residentId);
-    const subject = `Cobrança da unidade ${resident.unit_label}`;
-    const recipient = channel === "email" ? emailTo || resident.email : normalizeWhatsAppRecipient(resident.phone);
+    const subjectPrefix = isTest ? "Teste - " : "";
+    const subjectSuffix = isTest && testKind ? ` (${testKind})` : "";
+    const subject = `${subjectPrefix}Cobrança da unidade ${resident.unit_label}${subjectSuffix}`;
+    const recipient =
+      channel === "email" ? emailTo || resident.email : normalizeWhatsAppRecipient(isTest ? whatsappTo || resident.phone : resident.phone);
     let delivery;
 
     try {
