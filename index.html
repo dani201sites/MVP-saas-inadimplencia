@@ -45,7 +45,6 @@
           <button class="nav-item is-active" data-view="dashboard">Dashboard</button>
           <button class="nav-item" data-view="agents">Agentes</button>
           <button class="nav-item" data-view="charges">Cobranças</button>
-          <button class="nav-item" data-view="whatsappAi">IA WhatsApp</button>
           <button class="nav-item" data-view="condos">Condomínios</button>
           <button class="nav-item" data-view="residents">Condôminos</button>
           <button class="nav-item" data-view="cashflow">Fluxo de caixa</button>
@@ -245,14 +244,58 @@
               <div id="messageHistory" class="history-list"></div>
             </article>
           </div>
-        </section>
 
-        <section id="whatsappAi" class="view">
           <article class="panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">Atendimento assistido</p>
-                <h3>Sugestões da IA para WhatsApp</h3>
+                <p class="eyebrow">Cobrança extrema</p>
+                <h3>Modelos pré-judicial e extrajudicial</h3>
+              </div>
+            </div>
+            <p class="helper-text">
+              Modelos editáveis para casos em que a cobrança ultrapassou a régua de 30 dias sem pagamento ou resposta.
+            </p>
+
+            <div class="legal-template-grid">
+              <article class="legal-template-card">
+                <div class="legal-template-top">
+                  <div>
+                    <strong>Aviso pré-judicial</strong>
+                    <small>Tom firme, ainda conciliatório.</small>
+                  </div>
+                  <button class="ghost-button table-action" type="button" data-legal-template="preJudicial">Usar modelo</button>
+                </div>
+                <textarea id="preJudicialTemplate" rows="9">Olá, {{nome}}. Consta em nosso sistema uma pendência referente à unidade {{unidade}} do {{condominio}}, no valor de {{valor}}, em atraso há {{dias}} dias.
+
+Este é um aviso pré-judicial para regularização amigável do débito. Solicitamos o retorno com comprovante de pagamento ou proposta de regularização em até 48 horas.
+
+Caso não haja manifestação ou pagamento dentro deste prazo, a administradora poderá encaminhar o caso para análise jurídica e adotar as medidas cabíveis para cobrança do débito condominial.</textarea>
+              </article>
+
+              <article class="legal-template-card serious">
+                <div class="legal-template-top">
+                  <div>
+                    <strong>Aviso extrajudicial</strong>
+                    <small>Tom mais sério, etapa final antes de jurídico.</small>
+                  </div>
+                  <button class="ghost-button table-action" type="button" data-legal-template="extraJudicial">Usar modelo</button>
+                </div>
+                <textarea id="extraJudicialTemplate" rows="9">Notificação extrajudicial.
+
+Olá, {{nome}}. Informamos que permanece em aberto a pendência referente à unidade {{unidade}} do {{condominio}}, no valor de {{valor}}, com atraso de {{dias}} dias.
+
+Esta é a última tentativa de regularização administrativa antes do encaminhamento ao setor jurídico. Solicitamos pagamento integral ou contato imediato para acordo em até 24 horas.
+
+Na ausência de retorno, o condomínio poderá adotar as medidas judiciais cabíveis para cobrança do débito, incluindo atualização de valores, encargos, custas e honorários, conforme aplicável.</textarea>
+              </article>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">WhatsApp assistido</p>
+                <h3>Sugestões da IA</h3>
               </div>
               <button id="refreshAiConversationsButton" class="ghost-button" type="button">Atualizar conversas</button>
             </div>

@@ -37,7 +37,6 @@ const views = {
   dashboard: "Dashboard",
   agents: "Agentes",
   charges: "Cobranças",
-  whatsappAi: "IA WhatsApp",
   condos: "Condomínios",
   residents: "Condôminos",
   cashflow: "Fluxo de caixa",
@@ -433,6 +432,21 @@ function updateMessagePreview() {
     .replaceAll("{{valor}}", currency.format(fromCents(resident.amountCents)))
     .replaceAll("{{dias}}", String(resident.days || 0));
   updateChargeEmailField({ shouldPrefill: true });
+}
+
+function buildMessageFromTemplate(template) {
+  const resident = getResidentById($("#residentSelect").value);
+
+  if (!resident) {
+    return template;
+  }
+
+  return template
+    .replaceAll("{{nome}}", resident.name)
+    .replaceAll("{{unidade}}", resident.unit)
+    .replaceAll("{{condominio}}", getCondoName(resident.condoId))
+    .replaceAll("{{valor}}", currency.format(fromCents(resident.amountCents)))
+    .replaceAll("{{dias}}", String(resident.days || 0));
 }
 
 function updateChargeEmailField({ shouldPrefill = false } = {}) {
@@ -917,6 +931,15 @@ $("#aiConversationList").addEventListener("click", async (event) => {
     sendButton.disabled = false;
     sendButton.textContent = previousLabel;
   }
+});
+
+document.querySelectorAll("[data-legal-template]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const templateId = button.dataset.legalTemplate === "extraJudicial" ? "#extraJudicialTemplate" : "#preJudicialTemplate";
+    $("#messageInput").value = buildMessageFromTemplate($(templateId).value.trim());
+    setView("charges");
+    setNotice("Modelo aplicado na mensagem da cobrança manual. Revise antes de enviar.", "success");
+  });
 });
 
 $("#condoFilter").addEventListener("change", (event) => {

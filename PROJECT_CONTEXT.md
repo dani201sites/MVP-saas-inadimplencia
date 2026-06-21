@@ -58,7 +58,8 @@ O sistema deve ajudar administradoras a:
 - A primeira camada de IA via OpenRouter foi criada para analisar mensagens recebidas, classificar intencao e gerar sugestao curta, mas fica desligada enquanto `OPENROUTER_AI_ENABLED` nao estiver como `true`.
 - O modelo inicial escolhido para baixo custo e `google/gemini-2.5-flash-lite`.
 - A migracao de analise da IA foi aplicada no Neon, adicionando campos para intencao, confianca, sugestao e modelo usado em `whatsapp_conversation_messages`.
-- A area `IA WhatsApp` do painel permite revisar a mensagem recebida, editar a sugestao da IA e enviar a resposta aprovada manualmente.
+- A area independente `IA WhatsApp` foi removida da navegacao; as sugestoes da IA agora ficam dentro de `Cobranças`, junto do historico e do fluxo de envio.
+- A tela de `Cobranças` possui modelos editaveis de aviso pre-judicial e extrajudicial para casos extremos apos a regua de cobranca.
 - A vinculacao por telefone considera a variacao brasileira com e sem o nono digito apos o DDD.
 - A resposta automatica da IA pode ser liberada por `OPENROUTER_AI_AUTOREPLY_ENABLED=true`, respeitando confianca minima e bloqueios de seguranca.
 - O backend calcula a data atual em `America/Sao_Paulo` e envia contexto temporal para a IA comparar vencimento, atraso e contestacoes do condomino.
@@ -125,7 +126,7 @@ Nao devemos confundir:
 - nao ativar IA conversacional ate que mensagens recebidas estejam salvas e auditaveis
 - usar LLM primeiro como sugestao assistida, antes de liberar resposta automatica direta no WhatsApp
 - manter resposta automatica atras de variavel de ambiente, permitindo desligar a IA sem alterar codigo
-- quando a resposta automatica estiver desligada, respostas sugeridas pela IA so devem sair pelo WhatsApp apos clique manual do operador na area `IA WhatsApp`
+- quando a resposta automatica estiver desligada, respostas sugeridas pela IA so devem sair pelo WhatsApp apos clique manual do operador na area `Cobranças`
 - quando a resposta automatica estiver ligada, bloquear contestacao, pedido humano e pagamento realizado; nesses casos deve seguir para revisao humana
 - se o condomino contestar data ou valor, a IA deve comparar com dados do sistema antes de reconhecer erro; se o sistema nao comprovar, deve encaminhar para humano
 - SMS deve permanecer fora do escopo operacional real deste MVP, ficando apenas como canal futuro representado no painel

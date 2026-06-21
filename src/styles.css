@@ -443,6 +443,45 @@ form button:disabled {
   gap: 12px;
 }
 
+.legal-template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.legal-template-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #fbfcfb;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.legal-template-card.serious {
+  background: #fffaf5;
+  border-color: #efd8bd;
+}
+
+.legal-template-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.legal-template-top strong,
+.legal-template-top small {
+  display: block;
+}
+
+.legal-template-top small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .panel {
   padding: 20px;
 }
@@ -915,6 +954,10 @@ th {
   }
 
   .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .legal-template-grid {
     grid-template-columns: 1fr;
   }
 

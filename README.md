@@ -85,6 +85,8 @@ Ja existe uma primeira demonstracao funcional publicada com:
 - painel de agentes
 - tela de cobrancas com envio real por e-mail
 - tela de cobrancas com envio real por WhatsApp via W-API
+- tela de cobrancas com modelos editaveis de aviso pre-judicial e extrajudicial para etapas extremas
+- sugestoes da IA para WhatsApp consolidadas dentro da tela de cobrancas
 - aba `Configurações > Cobranças de teste` com envio real por e-mail ou WhatsApp usando condômino base e destinatário manual
 - historico de mensagens com status e destinatario
 - fluxo de caixa simples
@@ -109,11 +111,11 @@ Status validado:
 - backend preparado para salvar mensagens recebidas pelo webhook `webhookReceived` e envios manuais na estrutura de conversas
 - camada inicial de IA via OpenRouter criada para analisar mensagens recebidas, classificar intencao e salvar sugestao de resposta, sem envio automatico
 - migracao `database/neon_mvp_migration_whatsapp_ai_analysis.sql` aplicada no Neon para registrar analise e sugestao da IA nas mensagens de WhatsApp
-- area `IA WhatsApp` criada no painel para revisar mensagens recebidas, editar sugestoes e enviar respostas aprovadas manualmente
+- area de sugestoes da IA para WhatsApp fica dentro de `Cobranças`, permitindo revisar mensagens recebidas, editar sugestoes e enviar respostas aprovadas manualmente
 - vinculo de conversas tenta localizar o condomino mesmo quando o WhatsApp retorna numero brasileiro sem o nono digito
 - resposta automatica da IA preparada por variaveis, com confianca minima e bloqueio para contestacao, pedido humano e pagamento realizado
 - prompt da IA recebe contexto temporal calculado pelo backend em `America/Sao_Paulo`, permitindo responder se o vencimento ja passou, vence hoje ou ainda vai vencer
-- webhooks de status do WhatsApp, como `status@broadcast`, devem ser ignorados para nao aparecerem na area `IA WhatsApp` nem acionarem resposta automatica
+- webhooks de status do WhatsApp, como `status@broadcast`, devem ser ignorados para nao aparecerem na area de sugestoes da IA em `Cobranças` nem acionarem resposta automatica
 - cobrancas de teste sao salvas no mesmo `message_logs`, com assunto iniciado por `Teste -`, sem exigir nova migracao de banco nesta etapa
 - SMS permanece apenas como canal futuro representado no painel; nao faz parte da operacao real prevista para este MVP
 
@@ -193,7 +195,7 @@ Proximos passos mais provaveis:
 - criar regua simples de cobranca
 - planejar agendamento de e-mails com banco e rotina agendada
 - ativar a IA em modo assistido para interpretar respostas dos condominos e sugerir respostas dentro de limites operacionais
-- testar a area `IA WhatsApp` com respostas reais e aprovar manualmente as sugestoes antes de considerar automacao
+- testar a area de sugestoes da IA dentro de `Cobranças` com respostas reais e aprovar manualmente as sugestoes antes de considerar automacao
 - melhorar tratamento visual para estados vazios do dashboard
 
 ## Direcao futura da regua

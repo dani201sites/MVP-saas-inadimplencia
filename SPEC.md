@@ -92,6 +92,13 @@ Historico deve mostrar:
 - conteudo da mensagem
 - horario do envio
 
+Modelos extremos devem permitir:
+
+- editar um aviso pre-judicial
+- editar um aviso extrajudicial
+- aplicar o modelo escolhido na mensagem de cobranca manual
+- manter esses modelos como apoio operacional, sem envio automatico nesta etapa
+
 Tambem deve existir uma area de teste em `Configurações > Cobranças de teste` para:
 
 - selecionar canal de teste
@@ -178,7 +185,7 @@ Objetivo:
 - respostas de IA so devem ser implementadas depois de salvar e auditar mensagens recebidas
 - a primeira integracao com LLM deve operar em modo assistido, sugerindo respostas antes de enviar automaticamente
 - a IA via OpenRouter deve permanecer atras de uma variavel liga/desliga e nao pode enviar mensagem sozinha nesta fase
-- a area `IA WhatsApp` deve permitir revisar, editar e enviar manualmente uma resposta sugerida pela IA
+- a area de sugestoes da IA deve ficar dentro de `Cobranças`, permitindo revisar, editar e enviar manualmente uma resposta sugerida pela IA
 - resposta automatica da IA so pode ocorrer quando a variavel estiver ligada, a confianca minima for atingida e a intencao nao estiver bloqueada
 - a IA deve receber data atual e status temporal do vencimento calculados pelo backend, nao por valor fixo no prompt
 - publicacoes de status do WhatsApp devem ser ignoradas pelo webhook e nao podem aparecer como conversa nem gerar resposta da IA
