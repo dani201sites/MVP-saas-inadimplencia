@@ -403,6 +403,46 @@ form button:disabled {
   grid-template-columns: minmax(300px, 0.7fr) minmax(0, 1.3fr);
 }
 
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.settings-tab {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 14px;
+  color: var(--muted);
+  background: #fbfcfb;
+  font-weight: 800;
+}
+
+.settings-tab.is-active {
+  color: var(--brand-strong);
+  background: #e8f3ef;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.compact-header {
+  margin-bottom: 0;
+}
+
+.wide-field {
+  grid-column: 1 / -1;
+}
+
+.test-history {
+  display: grid;
+  gap: 12px;
+}
+
 .panel {
   padding: 20px;
 }

@@ -463,22 +463,73 @@
               <div class="panel-header">
                 <div>
                   <p class="eyebrow">Testes e simulações</p>
-                  <h3>Calendário de cobrança Email + WhatsApp</h3>
+                  <h3>Agentes e régua de cobrança</h3>
                 </div>
-                <button id="addCalendarRuleButton" class="ghost-button" type="button">Adicionar etapa</button>
               </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Dia</th>
-                      <th>Etapa</th>
-                      <th>Canal</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="billingCalendarTable"></tbody>
-                </table>
+
+              <div class="settings-tabs" role="tablist" aria-label="Configurações de cobrança">
+                <button class="settings-tab is-active" type="button" data-settings-tab="calendar">Calendário de envios</button>
+                <button class="settings-tab" type="button" data-settings-tab="tests">Cobranças de teste</button>
+              </div>
+
+              <div id="calendarSettingsPanel" class="settings-panel">
+                <div class="panel-header compact-header">
+                  <div>
+                    <p class="eyebrow">Régua padrão</p>
+                    <h3>Calendário de cobrança Email + WhatsApp</h3>
+                  </div>
+                  <button id="addCalendarRuleButton" class="ghost-button" type="button">Adicionar etapa</button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Dia</th>
+                        <th>Etapa</th>
+                        <th>Canal</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="billingCalendarTable"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div id="testChargesSettingsPanel" class="settings-panel is-hidden">
+                <form id="testChargeForm" class="form-grid">
+                  <label>
+                    Canal
+                    <select id="testChargeChannel">
+                      <option value="email">Email</option>
+                      <option value="whatsapp">WhatsApp</option>
+                    </select>
+                  </label>
+                  <label>
+                    Tipo de teste
+                    <select id="testChargeKind">
+                      <option>Lembrete preventivo</option>
+                      <option>Cobrança no vencimento</option>
+                      <option>FollowUp pós vencimento</option>
+                      <option>Cobrança reforçada</option>
+                      <option>Aviso pré-jurídico</option>
+                    </select>
+                  </label>
+                  <label>
+                    Destinatário de teste
+                    <input id="testChargeRecipient" type="text" placeholder="email@teste.com ou 55DDDnumero" required />
+                  </label>
+                  <label>
+                    Condômino base
+                    <select id="testChargeResident"></select>
+                  </label>
+                  <label class="wide-field">
+                    Mensagem de teste
+                    <textarea id="testChargeMessage" rows="5">Olá, {{nome}}. Este é um teste do agente de cobrança para a unidade {{unidade}}.</textarea>
+                  </label>
+                  <button type="submit">Registrar teste</button>
+                </form>
+
+                <div id="testChargeHistory" class="test-history"></div>
               </div>
             </article>
           </div>

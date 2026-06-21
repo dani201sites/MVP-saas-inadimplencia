@@ -10,6 +10,7 @@ const state = {
   messages: [],
   aiConversations: [],
   billingCalendar: [],
+  testCharges: [],
   cashflow: [],
   hasLoaded: false,
   editingCondoId: null,
@@ -132,6 +133,19 @@ function formatCalendarOffset(offset) {
 
 function saveBillingCalendar() {
   localStorage.setItem("billingCalendar", JSON.stringify(state.billingCalendar));
+}
+
+function saveTestCharges() {
+  localStorage.setItem("testCharges", JSON.stringify(state.testCharges));
+}
+
+function loadTestCharges() {
+  try {
+    const stored = JSON.parse(localStorage.getItem("testCharges") || "[]");
+    state.testCharges = Array.isArray(stored) ? stored : [];
+  } catch {
+    state.testCharges = [];
+  }
 }
 
 function loadBillingCalendar() {
@@ -403,6 +417,13 @@ function renderResidentSelect() {
   updateMessagePreview();
   updateChargeEmailField({ shouldPrefill: true });
   updateChargeChannelState();
+}
+
+function renderTestChargeResidentSelect() {
+  $("#testChargeResident").innerHTML = [
+    `<option value="">Sem condômino específico</option>`,
+    ...state.residents.map((resident) => `<option value="${escapeHtml(resident.id)}">${escapeHtml(resident.name)} - ${escapeHtml(resident.unit)}</option>`),
+  ].join("");
 }
 
 function updateMessagePreview() {
@@ -701,6 +722,36 @@ function renderBillingCalendar() {
     .join("");
 }
 
+function renderTestChargeHistory() {
+  if (!state.testCharges.length) {
+    $("#testChargeHistory").innerHTML = `
+      <div class="empty-state">
+        <strong>Nenhum teste registrado ainda.</strong>
+        <p>Use esta área para simular mensagens dos agentes antes da régua automática existir.</p>
+      </div>
+    `;
+    return;
+  }
+
+  $("#testChargeHistory").innerHTML = state.testCharges
+    .map(
+      (test) => `
+        <div class="history-item">
+          <div class="history-top">
+            <strong>${escapeHtml(test.kind)}</strong>
+            <span class="pill">${escapeHtml(getChannelLabel(test.channel))}</span>
+          </div>
+          <div class="history-meta">
+            <span>${escapeHtml(test.recipient)}</span>
+            <span>${escapeHtml(formatTimeline(test.createdAt))}</span>
+          </div>
+          <p>${escapeHtml(test.message)}</p>
+        </div>
+      `,
+    )
+    .join("");
+}
+
 function resetCondoForm() {
   state.editingCondoId = null;
   $("#condoForm").reset();
@@ -777,6 +828,8 @@ function renderAll() {
   renderResidents();
   renderCashflow();
   renderBillingCalendar();
+  renderTestChargeResidentSelect();
+  renderTestChargeHistory();
 }
 
 function setView(viewName) {
@@ -959,6 +1012,38 @@ $("#themeSelect").addEventListener("change", (event) => {
   applyTheme(event.target.value);
 });
 
+document.querySelectorAll("[data-settings-tab]").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll("[data-settings-tab]").forEach((item) => item.classList.remove("is-active"));
+    button.classList.add("is-active");
+    $("#calendarSettingsPanel").classList.toggle("is-hidden", button.dataset.settingsTab !== "calendar");
+    $("#testChargesSettingsPanel").classList.toggle("is-hidden", button.dataset.settingsTab !== "tests");
+  });
+});
+
+$("#testChargeForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const resident = getResidentById($("#testChargeResident").value);
+  const rawMessage = $("#testChargeMessage").value.trim();
+  const message = rawMessage
+    .replaceAll("{{nome}}", resident?.name || "Condômino teste")
+    .replaceAll("{{unidade}}", resident?.unit || "Unidade teste")
+    .replaceAll("{{condominio}}", resident ? getCondoName(resident.condoId) : "Condomínio teste");
+
+  state.testCharges.unshift({
+    channel: $("#testChargeChannel").value,
+    kind: $("#testChargeKind").value,
+    recipient: $("#testChargeRecipient").value.trim(),
+    message,
+    createdAt: new Date().toISOString(),
+  });
+  state.testCharges = state.testCharges.slice(0, 12);
+  saveTestCharges();
+  renderTestChargeHistory();
+  setNotice("Teste registrado localmente. Nenhum envio real foi disparado.", "success");
+});
+
 $("#chargeForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const button = event.currentTarget.querySelector("button[type='submit']");
@@ -991,6 +1076,7 @@ $("#chargeForm").addEventListener("submit", async (event) => {
 });
 
 loadBillingCalendar();
+loadTestCharges();
 $("#themeSelect").value = localStorage.getItem("theme") || "light";
 applyTheme($("#themeSelect").value);
 
