@@ -170,7 +170,7 @@ export default async function handler(req, res) {
     const subjectSuffix = isTest && testKind ? ` (${testKind})` : "";
     const subject = `${subjectPrefix}Cobrança da unidade ${resident.unit_label}${subjectSuffix}`;
     const recipient =
-      channel === "email" ? emailTo || resident.email : normalizeWhatsAppRecipient(isTest ? whatsappTo || resident.phone : resident.phone);
+      channel === "email" ? emailTo || resident.email : normalizeWhatsAppRecipient(whatsappTo || resident.phone);
     let delivery;
 
     try {

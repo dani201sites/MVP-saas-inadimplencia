@@ -401,6 +401,7 @@ function renderResidentSelect() {
   $("#residentSelect").innerHTML = options;
   updateMessagePreview();
   updateChargeEmailField({ shouldPrefill: true });
+  updateChargeWhatsAppField({ shouldPrefill: true });
   updateChargeChannelState();
 }
 
@@ -432,6 +433,7 @@ function updateMessagePreview() {
     .replaceAll("{{valor}}", currency.format(fromCents(resident.amountCents)))
     .replaceAll("{{dias}}", String(resident.days || 0));
   updateChargeEmailField({ shouldPrefill: true });
+  updateChargeWhatsAppField({ shouldPrefill: true });
 }
 
 function buildMessageFromTemplate(template) {
@@ -469,6 +471,30 @@ function updateChargeEmailField({ shouldPrefill = false } = {}) {
   }
 }
 
+function updateChargeWhatsAppField({ shouldPrefill = false } = {}) {
+  const channel = $("#channelSelect").value;
+  const isWhatsApp = channel === "whatsapp";
+  const field = $("#whatsappRecipientField");
+  const input = $("#whatsappRecipientInput");
+
+  field.classList.toggle("is-hidden", !isWhatsApp);
+  input.required = isWhatsApp;
+
+  if (!isWhatsApp) {
+    input.value = "";
+    return;
+  }
+
+  if (shouldPrefill || !input.value.trim()) {
+    const resident = getResidentById($("#residentSelect").value);
+    input.value = resident?.phone || "";
+  }
+}
+
+function hasWhatsAppRecipient() {
+  return Boolean($("#whatsappRecipientInput").value.trim().replace(/\D/g, ""));
+}
+
 function updateChargeChannelState() {
   const channel = $("#channelSelect").value;
   const isEmail = channel === "email";
@@ -476,18 +502,19 @@ function updateChargeChannelState() {
   const submitButton = $("#chargeForm").querySelector("button[type='submit']");
   const text = $("#channelAvailabilityText");
   const resident = getResidentById($("#residentSelect").value);
+  const hasWhatsApp = hasWhatsAppRecipient();
 
-  submitButton.disabled = !resident || channel === "sms" || (isWhatsApp && !resident?.phone);
+  submitButton.disabled = !resident || channel === "sms" || (isWhatsApp && !hasWhatsApp);
   text.textContent = isEmail
     ? resident
       ? "Canal ativo: envio real por e-mail via Resend."
       : "Nenhum condômino disponível neste filtro."
     : isWhatsApp
-      ? resident?.phone
-        ? `Canal ativo: envio por WhatsApp para ${resident.phone}.`
-        : "Este condômino não possui telefone cadastrado para WhatsApp."
+      ? hasWhatsApp
+        ? `Canal ativo: envio por WhatsApp para ${$("#whatsappRecipientInput").value.trim()}.`
+        : "Informe um WhatsApp de destino para enviar a cobrança."
       : `${getChannelLabel(channel)} ainda não está integrado neste MVP. Use e-mail ou WhatsApp por enquanto.`;
-  text.classList.toggle("danger", !resident || channel === "sms" || (isWhatsApp && !resident?.phone));
+  text.classList.toggle("danger", !resident || channel === "sms" || (isWhatsApp && !hasWhatsApp));
 }
 
 function renderMessages() {
@@ -961,8 +988,10 @@ $("#residentSelect").addEventListener("change", updateMessagePreview);
 $("#channelSelect").addEventListener("change", () => {
   updateMessagePreview();
   updateChargeEmailField({ shouldPrefill: true });
+  updateChargeWhatsAppField({ shouldPrefill: true });
   updateChargeChannelState();
 });
+$("#whatsappRecipientInput").addEventListener("input", updateChargeChannelState);
 
 $("#condoCancelEditButton").addEventListener("click", resetCondoForm);
 $("#residentCancelEditButton").addEventListener("click", resetResidentForm);
@@ -1104,6 +1133,7 @@ $("#chargeForm").addEventListener("submit", async (event) => {
         residentId: $("#residentSelect").value,
         channel: selectedChannel,
         emailTo: $("#emailRecipientInput").value.trim(),
+        whatsappTo: $("#whatsappRecipientInput").value.trim(),
         message: $("#messageInput").value,
       }),
     });
