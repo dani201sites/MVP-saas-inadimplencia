@@ -58,17 +58,19 @@ export default async function handler(req, res) {
     try {
       messages = await sql`
         select
-          id,
-          resident_name,
-          channel::text as channel,
-          subject,
-          recipient,
-          status::text as status,
-          body,
-          coalesce(sent_at, created_at) as sent_at
-        from v_message_history
-        order by coalesce(sent_at, created_at) desc
-        limit 20
+          ml.id,
+          r.full_name as resident_name,
+          ml.condominium_id,
+          ml.channel::text as channel,
+          ml.subject,
+          coalesce(ml.recipient, r.email::text, '') as recipient,
+          ml.status::text as status,
+          ml.body,
+          coalesce(ml.sent_at, ml.created_at) as sent_at
+        from message_logs ml
+        join residents r on r.id = ml.resident_id
+        order by coalesce(ml.sent_at, ml.created_at) desc
+        limit 100
       `;
     } catch (error) {
       if (error?.code !== "42703") {
@@ -77,17 +79,19 @@ export default async function handler(req, res) {
 
       messages = await sql`
         select
-          id,
-          resident_name,
-          channel::text as channel,
-          subject,
+          ml.id,
+          r.full_name as resident_name,
+          ml.condominium_id,
+          ml.channel::text as channel,
+          ml.subject,
           '' as recipient,
-          status::text as status,
-          body,
-          coalesce(sent_at, created_at) as sent_at
-        from v_message_history
-        order by coalesce(sent_at, created_at) desc
-        limit 20
+          ml.status::text as status,
+          ml.body,
+          coalesce(ml.sent_at, ml.created_at) as sent_at
+        from message_logs ml
+        join residents r on r.id = ml.resident_id
+        order by coalesce(ml.sent_at, ml.created_at) desc
+        limit 100
       `;
     }
 
@@ -121,6 +125,7 @@ export default async function handler(req, res) {
       messages: messages.map((row) => ({
         id: row.id,
         resident: row.resident_name,
+        condoId: row.condominium_id,
         channel: row.channel,
         subject: row.subject || "",
         recipient: row.recipient || "",

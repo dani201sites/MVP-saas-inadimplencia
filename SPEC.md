@@ -170,6 +170,8 @@ Objetivo:
 - a area `IA WhatsApp` deve permitir revisar, editar e enviar manualmente uma resposta sugerida pela IA
 - resposta automatica da IA so pode ocorrer quando a variavel estiver ligada, a confianca minima for atingida e a intencao nao estiver bloqueada
 - a IA deve receber data atual e status temporal do vencimento calculados pelo backend, nao por valor fixo no prompt
+- publicacoes de status do WhatsApp devem ser ignoradas pelo webhook e nao podem aparecer como conversa nem gerar resposta da IA
+- SMS deve continuar indisponivel para uso real neste MVP, mesmo permanecendo visivel no painel como canal futuro
 
 ## Regras que nao fazem parte deste MVP
 
@@ -178,9 +180,7 @@ Objetivo:
 - permissao complexa por perfil
 - integracao real com Meta
 - integracao real com Evolution API
-- automacao real de envio
 - leitura real de respostas
-- resposta automatica de IA para conversas recebidas
 - banco de dados final de producao
 
 ## Criterios de validacao do MVP
@@ -201,7 +201,7 @@ O MVP sera considerado validado nesta fase se:
 2. evoluir a visao individual por condominio alem do filtro operacional atual
 3. salvar mensagens recebidas pelo WhatsApp como conversa estruturada
 4. testar a interface de revisao das sugestoes da IA em promessas de pagamento e duvidas simples
-5. criar regua simples de cobranca
-6. planejar agendamento de e-mails e WhatsApp com banco e rotina agendada
+5. desenhar a regua simples de cobranca com marcos configuraveis a partir do vencimento
+6. planejar agendamento de e-mails e WhatsApp com banco, rotina agendada e disparo automatico por data calculada
 7. melhorar estados vazios e mensagens de erro da interface
-8. depois iniciar integracao real de SMS
+8. manter SMS como canal futuro e reavaliar integracao so depois

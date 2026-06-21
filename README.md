@@ -90,7 +90,7 @@ Ja existe uma primeira demonstracao funcional publicada com:
 - estrutura pronta para deploy simples na `Vercel`
 - persistencia no `Neon Postgres` via endpoints serverless em `api/`
 
-SMS e automacoes ainda nao fazem parte desta etapa funcional. O WhatsApp ja pode ser usado para envio manual de cobrancas, mas a conversa automatizada com IA ainda nao foi implementada.
+SMS e automacoes de producao ainda nao fazem parte desta etapa funcional. O WhatsApp ja pode ser usado para envio manual de cobrancas, e a IA conversacional ja existe em modo controlado por variaveis de ambiente para analise, sugestao e resposta automatica limitada.
 
 Status validado:
 
@@ -112,6 +112,8 @@ Status validado:
 - vinculo de conversas tenta localizar o condomino mesmo quando o WhatsApp retorna numero brasileiro sem o nono digito
 - resposta automatica da IA preparada por variaveis, com confianca minima e bloqueio para contestacao, pedido humano e pagamento realizado
 - prompt da IA recebe contexto temporal calculado pelo backend em `America/Sao_Paulo`, permitindo responder se o vencimento ja passou, vence hoje ou ainda vai vencer
+- webhooks de status do WhatsApp, como `status@broadcast`, devem ser ignorados para nao aparecerem na area `IA WhatsApp` nem acionarem resposta automatica
+- SMS permanece apenas como canal futuro representado no painel; nao faz parte da operacao real prevista para este MVP
 
 ## Próximos passos
 
@@ -190,6 +192,20 @@ Proximos passos mais provaveis:
 - ativar a IA em modo assistido para interpretar respostas dos condominos e sugerir respostas dentro de limites operacionais
 - testar a area `IA WhatsApp` com respostas reais e aprovar manualmente as sugestoes antes de considerar automacao
 - melhorar tratamento visual para estados vazios do dashboard
+
+## Direcao futura da regua
+
+Pensando no produto real, a direcao esperada e evoluir de envio manual para uma regua automatica de cobranca baseada no vencimento de cada fatura.
+
+Exemplo de fluxo esperado:
+
+- lembrete preventivo alguns dias antes do vencimento
+- aviso no dia do vencimento
+- follow-up alguns dias apos o vencimento
+- novos avisos em marcos como 7, 14, 21 e 30 dias
+- aviso extrajudicial ou pre-juridico em atrasos mais longos
+
+Esses marcos nao devem ficar fixos no codigo. A ideia futura e que sejam configuraveis por operacao, com o sistema calculando as datas a partir do vencimento de cada condominio ou condomino e disparando automaticamente no momento certo.
 
 ## Arquivos de referencia
 

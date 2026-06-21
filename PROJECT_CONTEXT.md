@@ -21,7 +21,7 @@ Ainda nao estamos priorizando:
 
 - backend completo de producao
 - automacoes reais em canais externos
-- resposta automatica por IA em conversas recebidas
+- regua diaria completa de cobranca com agendamento por vencimento
 - arquitetura final escalavel
 - autenticacao complexa
 - multiempresa compartilhada
@@ -61,6 +61,7 @@ O sistema deve ajudar administradoras a:
 - A vinculacao por telefone considera a variacao brasileira com e sem o nono digito apos o DDD.
 - A resposta automatica da IA pode ser liberada por `OPENROUTER_AI_AUTOREPLY_ENABLED=true`, respeitando confianca minima e bloqueios de seguranca.
 - O backend calcula a data atual em `America/Sao_Paulo` e envia contexto temporal para a IA comparar vencimento, atraso e contestacoes do condomino.
+- O webhook deve ignorar payloads de status do WhatsApp, especialmente `status@broadcast`, para evitar que publicacoes de status entrem como conversa privada ou acionem IA.
 
 ## Regra critica sobre arquitetura
 
@@ -126,6 +127,8 @@ Nao devemos confundir:
 - quando a resposta automatica estiver desligada, respostas sugeridas pela IA so devem sair pelo WhatsApp apos clique manual do operador na area `IA WhatsApp`
 - quando a resposta automatica estiver ligada, bloquear contestacao, pedido humano e pagamento realizado; nesses casos deve seguir para revisao humana
 - se o condomino contestar data ou valor, a IA deve comparar com dados do sistema antes de reconhecer erro; se o sistema nao comprovar, deve encaminhar para humano
+- SMS deve permanecer fora do escopo operacional real deste MVP, ficando apenas como canal futuro representado no painel
+- a direcao do produto real e substituir boa parte do envio manual por uma regua automatica baseada no vencimento de cada fatura, com datas calculadas pelo sistema e disparos controlados por regras configuraveis
 - nao mexer no fluxo de caixa por enquanto sem necessidade clara de banco
 
 ## Proximas referencias

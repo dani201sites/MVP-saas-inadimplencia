@@ -51,6 +51,7 @@ async function listConversations(sql) {
     left join residents r on r.id = wcm.resident_id
     left join condominiums c on c.id = wcm.condominium_id
     where wcm.direction = 'inbound'::conversation_message_direction
+      and coalesce(wcm.raw_payload::text, '') not like '%status@broadcast%'
     order by coalesce(wcm.received_at, wcm.created_at) desc
     limit 30
   `;
@@ -72,6 +73,7 @@ async function sendApprovedReply(sql, { messageId, message }) {
     from whatsapp_conversation_messages wcm
     join whatsapp_conversations wc on wc.id = wcm.conversation_id
     where wcm.id = ${messageId}
+      and coalesce(wcm.raw_payload::text, '') not like '%status@broadcast%'
     limit 1
   `;
   const source = rows[0];

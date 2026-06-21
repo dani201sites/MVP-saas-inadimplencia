@@ -2,12 +2,14 @@ import "./styles.css";
 
 const state = {
   selectedCondo: "all",
+  selectedResidentStatus: "all",
   selectedAgentChannel: "whatsapp",
   condos: [],
   residents: [],
   agents: [],
   messages: [],
   aiConversations: [],
+  billingCalendar: [],
   cashflow: [],
   hasLoaded: false,
   editingCondoId: null,
@@ -39,7 +41,24 @@ const views = {
   condos: "Condomínios",
   residents: "Condôminos",
   cashflow: "Fluxo de caixa",
+  settings: "Configurações",
 };
+
+const defaultBillingCalendar = [
+  { offset: -5, label: "Lembrete", channel: "email" },
+  { offset: -3, label: "Lembrete", channel: "whatsapp" },
+  { offset: 0, label: "Cobrança/aviso no vencimento", channel: "whatsapp" },
+  { offset: 1, label: "FollowUp pós vencimento", channel: "email" },
+  { offset: 3, label: "FollowUp pós vencimento", channel: "whatsapp" },
+  { offset: 5, label: "Cobrança reforçada", channel: "email" },
+  { offset: 7, label: "Cobrança reforçada", channel: "whatsapp" },
+  { offset: 10, label: "Cobrança Firme", channel: "email" },
+  { offset: 14, label: "Cobrança Firme", channel: "whatsapp" },
+  { offset: 18, label: "Última tentativa amigável", channel: "email" },
+  { offset: 21, label: "Última tentativa amigável", channel: "whatsapp" },
+  { offset: 26, label: "Aviso pré-jurídico", channel: "email" },
+  { offset: 30, label: "Aviso Extrajudicial", channel: "whatsapp" },
+];
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -103,6 +122,30 @@ function getMessageStatusClass(status) {
   if (status === "failed") return "danger";
   if (status === "sent") return "success";
   return "";
+}
+
+function formatCalendarOffset(offset) {
+  if (offset < 0) return `D - ${Math.abs(offset)}`;
+  if (offset > 0) return `D + ${offset}`;
+  return "D 0";
+}
+
+function saveBillingCalendar() {
+  localStorage.setItem("billingCalendar", JSON.stringify(state.billingCalendar));
+}
+
+function loadBillingCalendar() {
+  try {
+    const stored = JSON.parse(localStorage.getItem("billingCalendar") || "null");
+    state.billingCalendar = Array.isArray(stored) && stored.length ? stored : defaultBillingCalendar;
+  } catch {
+    state.billingCalendar = defaultBillingCalendar;
+  }
+}
+
+function applyTheme(theme) {
+  document.body.classList.toggle("theme-compact", theme === "compact");
+  localStorage.setItem("theme", theme);
 }
 
 function formatTimeline(value) {
@@ -275,6 +318,20 @@ function renderChannels() {
 function renderOverdueTable() {
   const overdue = getFilteredResidents().filter((resident) => resident.status === "overdue");
 
+  if (!overdue.length) {
+    $("#overdueTable").innerHTML = `
+      <tr>
+        <td colspan="6">
+          <div class="empty-state table-empty">
+            <strong>Nenhum inadimplente neste filtro.</strong>
+            <p>Selecione outro condomínio ou acompanhe a base completa na aba Condôminos.</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   $("#overdueTable").innerHTML = overdue
     .map(
       (resident) => `
@@ -337,7 +394,8 @@ function renderAgentConfig() {
 }
 
 function renderResidentSelect() {
-  const options = state.residents
+  const residents = getFilteredResidents();
+  const options = residents
     .map((resident) => `<option value="${resident.id}">${escapeHtml(resident.name)} - ${escapeHtml(resident.unit)}</option>`)
     .join("");
 
@@ -351,7 +409,10 @@ function updateMessagePreview() {
   const residentId = $("#residentSelect").value;
   const resident = getResidentById(residentId);
 
-  if (!resident) return;
+  if (!resident) {
+    $("#messageInput").value = "";
+    return;
+  }
 
   const channel = $("#channelSelect").value;
   const agent = getAgentByChannel(channel) || getAgentByChannel("email");
@@ -395,19 +456,39 @@ function updateChargeChannelState() {
   const text = $("#channelAvailabilityText");
   const resident = getResidentById($("#residentSelect").value);
 
-  submitButton.disabled = channel === "sms" || (isWhatsApp && !resident?.phone);
+  submitButton.disabled = !resident || channel === "sms" || (isWhatsApp && !resident?.phone);
   text.textContent = isEmail
-    ? "Canal ativo: envio real por e-mail via Resend."
+    ? resident
+      ? "Canal ativo: envio real por e-mail via Resend."
+      : "Nenhum condômino disponível neste filtro."
     : isWhatsApp
       ? resident?.phone
         ? `Canal ativo: envio por WhatsApp para ${resident.phone}.`
         : "Este condômino não possui telefone cadastrado para WhatsApp."
       : `${getChannelLabel(channel)} ainda não está integrado neste MVP. Use e-mail ou WhatsApp por enquanto.`;
-  text.classList.toggle("danger", channel === "sms" || (isWhatsApp && !resident?.phone));
+  text.classList.toggle("danger", !resident || channel === "sms" || (isWhatsApp && !resident?.phone));
 }
 
 function renderMessages() {
-  $("#messageHistory").innerHTML = state.messages
+  const messages = state.messages.filter((message) => {
+    if (state.selectedCondo === "all") {
+      return true;
+    }
+
+    return message.condoId === state.selectedCondo;
+  });
+
+  if (!messages.length) {
+    $("#messageHistory").innerHTML = `
+      <div class="empty-state">
+        <strong>Nenhuma cobrança registrada neste filtro.</strong>
+        <p>Envios por e-mail ou WhatsApp deste condomínio aparecerão aqui.</p>
+      </div>
+    `;
+    return;
+  }
+
+  $("#messageHistory").innerHTML = messages
     .map(
       (message) => `
         <div class="history-item">
@@ -520,7 +601,29 @@ function renderCondos() {
 }
 
 function renderResidents() {
-  const residents = getFilteredResidents();
+  const residents = getFilteredResidents().filter((resident) => {
+    if (state.selectedResidentStatus === "all") {
+      return true;
+    }
+
+    return resident.status === state.selectedResidentStatus;
+  });
+
+  $("#residentStatusFilter").value = state.selectedResidentStatus;
+
+  if (!residents.length) {
+    $("#residentTable").innerHTML = `
+      <tr>
+        <td colspan="7">
+          <div class="empty-state table-empty">
+            <strong>Nenhum condômino encontrado.</strong>
+            <p>Ajuste os filtros ou cadastre um novo condômino.</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
 
   $("#residentTable").innerHTML = residents
     .map(
@@ -571,6 +674,33 @@ function renderCashflow() {
     : currency.format(0);
 }
 
+function renderBillingCalendar() {
+  $("#billingCalendarTable").innerHTML = state.billingCalendar
+    .map(
+      (rule, index) => `
+        <tr>
+          <td data-label="Dia">
+            <input class="inline-input" data-calendar-field="offset" data-calendar-index="${index}" type="number" value="${rule.offset}" />
+            <small>${escapeHtml(formatCalendarOffset(Number(rule.offset)))}</small>
+          </td>
+          <td data-label="Etapa">
+            <input class="inline-input" data-calendar-field="label" data-calendar-index="${index}" type="text" value="${escapeHtml(rule.label)}" />
+          </td>
+          <td data-label="Canal">
+            <select class="inline-input" data-calendar-field="channel" data-calendar-index="${index}">
+              <option value="email" ${rule.channel === "email" ? "selected" : ""}>Email</option>
+              <option value="whatsapp" ${rule.channel === "whatsapp" ? "selected" : ""}>WhatsApp</option>
+            </select>
+          </td>
+          <td data-label="Ações">
+            <button class="ghost-button table-action" type="button" data-calendar-remove="${index}">Remover</button>
+          </td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
 function resetCondoForm() {
   state.editingCondoId = null;
   $("#condoForm").reset();
@@ -585,8 +715,16 @@ function resetResidentForm() {
   $("#residentForm").reset();
   $("#residentAmount").value = 620;
   $("#residentDays").value = 0;
+  $("#residentEditorTitle").textContent = "Novo condômino";
   $("#residentSubmitButton").textContent = "Adicionar condômino";
   $("#residentCancelEditButton").classList.add("is-hidden");
+  $("#residentEditorPanel").classList.add("is-hidden");
+}
+
+function openResidentCreateForm() {
+  resetResidentForm();
+  $("#residentEditorPanel").classList.remove("is-hidden");
+  setView("residents");
 }
 
 function startCondoEdit(condoId) {
@@ -610,6 +748,8 @@ function startResidentEdit(residentId) {
   if (!resident) return;
 
   state.editingResidentId = residentId;
+  $("#residentEditorPanel").classList.remove("is-hidden");
+  $("#residentEditorTitle").textContent = "Editar condômino";
   $("#residentName").value = resident.name;
   $("#residentEmail").value = resident.email || "";
   $("#residentPhone").value = resident.phone || "";
@@ -636,6 +776,7 @@ function renderAll() {
   renderCondos();
   renderResidents();
   renderCashflow();
+  renderBillingCalendar();
 }
 
 function setView(viewName) {
@@ -679,7 +820,7 @@ document.querySelectorAll("[data-view], [data-view-link]").forEach((button) => {
   });
 });
 
-$("#quickChargeButton").addEventListener("click", () => setView("charges"));
+$("#newResidentButton").addEventListener("click", openResidentCreateForm);
 
 $("#refreshAiConversationsButton").addEventListener("click", async () => {
   try {
@@ -734,6 +875,11 @@ $("#condoFilter").addEventListener("change", (event) => {
   renderAll();
 });
 
+$("#residentStatusFilter").addEventListener("change", (event) => {
+  state.selectedResidentStatus = event.target.value;
+  renderResidents();
+});
+
 $("#agentChannel").addEventListener("change", (event) => {
   state.selectedAgentChannel = event.target.value;
   renderAgentConfig();
@@ -772,6 +918,47 @@ $("#residentTable").addEventListener("click", (event) => {
   }
 });
 
+$("#addCalendarRuleButton").addEventListener("click", () => {
+  state.billingCalendar.push({ offset: 0, label: "Nova etapa", channel: "email" });
+  saveBillingCalendar();
+  renderBillingCalendar();
+});
+
+$("#billingCalendarTable").addEventListener("input", (event) => {
+  const field = event.target.dataset.calendarField;
+  const index = Number(event.target.dataset.calendarIndex);
+
+  if (!field || Number.isNaN(index) || !state.billingCalendar[index]) return;
+
+  state.billingCalendar[index][field] = field === "offset" ? Number(event.target.value) : event.target.value;
+  saveBillingCalendar();
+});
+
+$("#billingCalendarTable").addEventListener("change", (event) => {
+  const field = event.target.dataset.calendarField;
+  const index = Number(event.target.dataset.calendarIndex);
+
+  if (!field || Number.isNaN(index) || !state.billingCalendar[index]) return;
+
+  state.billingCalendar[index][field] = field === "offset" ? Number(event.target.value) : event.target.value;
+  saveBillingCalendar();
+  renderBillingCalendar();
+});
+
+$("#billingCalendarTable").addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-calendar-remove]");
+
+  if (!removeButton) return;
+
+  state.billingCalendar.splice(Number(removeButton.dataset.calendarRemove), 1);
+  saveBillingCalendar();
+  renderBillingCalendar();
+});
+
+$("#themeSelect").addEventListener("change", (event) => {
+  applyTheme(event.target.value);
+});
+
 $("#chargeForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const button = event.currentTarget.querySelector("button[type='submit']");
@@ -802,6 +989,10 @@ $("#chargeForm").addEventListener("submit", async (event) => {
     button.textContent = previousLabel;
   }
 });
+
+loadBillingCalendar();
+$("#themeSelect").value = localStorage.getItem("theme") || "light";
+applyTheme($("#themeSelect").value);
 
 $("#agentConfigForm").addEventListener("submit", async (event) => {
   event.preventDefault();

@@ -51,7 +51,10 @@
           <button class="nav-item" data-view="cashflow">Fluxo de caixa</button>
         </nav>
 
-        <button id="logoutButton" class="logout-button">Sair</button>
+        <div class="sidebar-footer">
+          <button class="settings-button" data-view="settings" type="button" aria-label="Configurações" title="Configurações">⚙</button>
+          <button id="logoutButton" class="logout-button">Sair</button>
+        </div>
       </aside>
 
       <section class="workspace">
@@ -62,7 +65,7 @@
           </div>
           <div class="topbar-actions">
             <select id="condoFilter" aria-label="Filtrar condomínio"></select>
-            <button id="quickChargeButton" class="ghost-button">Nova cobrança</button>
+            <button id="newResidentButton" class="ghost-button">Novo condômino</button>
           </div>
         </header>
 
@@ -306,12 +309,12 @@
         </section>
 
         <section id="residents" class="view">
-          <div class="section-grid">
-            <article class="panel">
+          <div class="residents-layout">
+            <article id="residentEditorPanel" class="panel resident-editor is-hidden">
               <div class="panel-header">
                 <div>
                   <p class="eyebrow">Cadastro</p>
-                  <h3>Novo condômino</h3>
+                  <h3 id="residentEditorTitle">Novo condômino</h3>
                 </div>
               </div>
               <form id="residentForm" class="form-grid">
@@ -357,12 +360,17 @@
               </form>
             </article>
 
-            <article class="panel">
+            <article class="panel resident-list-panel">
               <div class="panel-header">
                 <div>
                   <p class="eyebrow">Base operacional</p>
                   <h3>Condôminos cadastrados</h3>
                 </div>
+                <select id="residentStatusFilter" class="compact-select" aria-label="Filtrar status do condômino">
+                  <option value="all">Todos os status</option>
+                  <option value="overdue">Inadimplentes</option>
+                  <option value="paid">Adimplentes</option>
+                </select>
               </div>
               <div class="table-wrap">
                 <table>
@@ -422,6 +430,55 @@
                   <span>Previsão total</span>
                   <strong id="cashExpected">R$ 0</strong>
                 </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="settings" class="view">
+          <div class="settings-layout">
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Preferências</p>
+                  <h3>Perfil e aparência</h3>
+                </div>
+              </div>
+              <form class="form-grid">
+                <label>
+                  Nome do operador
+                  <input type="text" value="Administrador CondoAgent" />
+                </label>
+                <label>
+                  Tema
+                  <select id="themeSelect">
+                    <option value="light">Claro operacional</option>
+                    <option value="compact">Compacto</option>
+                  </select>
+                </label>
+              </form>
+            </article>
+
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Testes e simulações</p>
+                  <h3>Calendário de cobrança Email + WhatsApp</h3>
+                </div>
+                <button id="addCalendarRuleButton" class="ghost-button" type="button">Adicionar etapa</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Dia</th>
+                      <th>Etapa</th>
+                      <th>Canal</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="billingCalendarTable"></tbody>
+                </table>
               </div>
             </article>
           </div>

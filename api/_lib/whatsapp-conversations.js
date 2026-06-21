@@ -53,6 +53,26 @@ function getContactIdentifiers(payload) {
   };
 }
 
+function getPayloadIds(payload) {
+  return [
+    payload?.sender?.id,
+    payload?.chat?.id,
+    payload?.key?.remoteJid,
+    payload?.remoteJid,
+    payload?.jid,
+    payload?.from,
+    payload?.to,
+  ].map((value) => String(value || "").trim().toLowerCase());
+}
+
+function isWhatsAppStatusPayload(payload) {
+  if (payload.isStatus || payload.statusBroadcast) {
+    return true;
+  }
+
+  return getPayloadIds(payload).some((id) => id === "status@broadcast" || id.endsWith("@broadcast"));
+}
+
 function getBrazilianPhoneVariants(contactPhone) {
   const phone = String(contactPhone || "").replace(/\D/g, "");
   const variants = new Set([phone]);
@@ -159,7 +179,7 @@ async function findOrCreateConversation(sql, contact, fallbackResident = null) {
 }
 
 export async function saveInboundWhatsAppMessage(sql, payload) {
-  if (payload.isGroup || payload.fromMe) {
+  if (payload.isGroup || payload.fromMe || isWhatsAppStatusPayload(payload)) {
     return { saved: false, reason: "ignored_non_resident_message" };
   }
 
