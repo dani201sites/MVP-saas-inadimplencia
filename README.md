@@ -109,12 +109,14 @@ Status validado:
 - durante o periodo de teste, a W-API adiciona automaticamente um aviso de "INSTANCIA DE TESTE" antes da mensagem enviada
 - migracao `database/neon_mvp_migration_whatsapp_conversations.sql` aplicada no Neon para preparar conversas de WhatsApp
 - backend preparado para salvar mensagens recebidas pelo webhook `webhookReceived` e envios manuais na estrutura de conversas
+- condominios possuem regra de vencimento da taxa condominial, com padrao `5º dia util`
 - camada inicial de IA via OpenRouter criada para analisar mensagens recebidas, classificar intencao e salvar sugestao de resposta, sem envio automatico
 - migracao `database/neon_mvp_migration_whatsapp_ai_analysis.sql` aplicada no Neon para registrar analise e sugestao da IA nas mensagens de WhatsApp
 - area de sugestoes da IA para WhatsApp fica dentro de `Cobranças`, permitindo revisar mensagens recebidas, editar sugestoes e enviar respostas aprovadas manualmente
 - vinculo de conversas tenta localizar o condomino mesmo quando o WhatsApp retorna numero brasileiro sem o nono digito
 - resposta automatica da IA preparada por variaveis, com confianca minima e bloqueio para contestacao, pedido humano e pagamento realizado
 - prompt da IA recebe contexto temporal calculado pelo backend em `America/Sao_Paulo`, permitindo responder se o vencimento ja passou, vence hoje ou ainda vai vencer
+- quando nao existe vencimento explicito na fatura, a IA calcula o vencimento do mes atual pela regra do condominio
 - webhooks de status do WhatsApp, como `status@broadcast`, devem ser ignorados para nao aparecerem na area de sugestoes da IA em `Cobranças` nem acionarem resposta automatica
 - cobrancas de teste sao salvas no mesmo `message_logs`, com assunto iniciado por `Teste -`, sem exigir nova migracao de banco nesta etapa
 - SMS permanece apenas como canal futuro representado no painel; nao faz parte da operacao real prevista para este MVP

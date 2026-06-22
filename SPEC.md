@@ -116,6 +116,7 @@ Deve permitir:
 - cadastrar bairro ou regiao
 - cadastrar quantidade de unidades
 - cadastrar taxa media
+- cadastrar a regra de vencimento da taxa condominial, como dia fixo ou dia util
 - editar dados basicos do condominio
 
 Tambem deve exibir:
@@ -144,6 +145,7 @@ Tambem deve exibir:
 - tabela de condominos
 - status individual
 - valor mensal
+- vencimento da taxa herdado do condominio
 - condominio vinculado
 - contato principal
 
@@ -188,6 +190,7 @@ Objetivo:
 - a area de sugestoes da IA deve ficar dentro de `Cobranças`, permitindo revisar, editar e enviar manualmente uma resposta sugerida pela IA
 - resposta automatica da IA so pode ocorrer quando a variavel estiver ligada, a confianca minima for atingida e a intencao nao estiver bloqueada
 - a IA deve receber data atual e status temporal do vencimento calculados pelo backend, nao por valor fixo no prompt
+- se a fatura ainda nao tiver vencimento explicito, a IA deve calcular o vencimento pela regra cadastrada no condominio
 - publicacoes de status do WhatsApp devem ser ignoradas pelo webhook e nao podem aparecer como conversa nem gerar resposta da IA
 - SMS deve continuar indisponivel para uso real neste MVP, mesmo permanecendo visivel no painel como canal futuro
 

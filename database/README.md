@@ -22,11 +22,12 @@ Se o banco já existir no Neon, rode também:
 - `database/neon_mvp_migration_message_recipient.sql`: adiciona o destinatário real no histórico de mensagens.
 - `database/neon_mvp_migration_whatsapp_conversations.sql`: cria conversas e mensagens recebidas/enviadas do WhatsApp para futura IA conversacional.
 - `database/neon_mvp_migration_whatsapp_ai_analysis.sql`: adiciona campos de analise da IA nas mensagens de WhatsApp e expõe a ultima sugestao na view de conversas.
+- `database/neon_mvp_migration_condominium_fee_due_rule.sql`: adiciona a regra de vencimento da taxa condominial por condominio, com padrao de `5º dia util`.
 
 ## Tabelas principais
 
 - `app_users`: operadores do painel
-- `condominiums`: condomínios cadastrados
+- `condominiums`: condomínios cadastrados, incluindo regra de vencimento da taxa condominial
 - `residents`: condôminos vinculados a um condomínio e unidade
 - `billing_records`: cobranças/mensalidades e situação de pagamento
 - `message_agents`: configuração dos canais de cobrança
@@ -46,6 +47,7 @@ Se o banco já existir no Neon, rode também:
 
 - Mantive o banco propositalmente enxuto para o MVP.
 - Não tratei o sistema como multi-tenant SaaS.
+- A regra de vencimento do condominio fica em `fee_due_rule` e `fee_due_day`; o padrao para condominios existentes e `business_day` com dia `5`.
 - O histórico de cobrança fica em `billing_records` e `message_logs`, o que já permite evoluir depois sem refazer tudo.
 - O fluxo de caixa aceita linhas globais do portfólio e, se quisermos depois, linhas por condomínio.
 - O envio por WhatsApp usa o mesmo `message_logs`, gravando `channel = whatsapp`, destinatario e `external_message_id` retornado pela W-API quando disponivel.

@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
     const [condos, residents, agents, cashflow] = await Promise.all([
       sql`
-        select id, name, district, units_count, average_fee_cents
+        select id, name, district, units_count, average_fee_cents, fee_due_rule, fee_due_day
         from condominiums
         order by name
       `,
@@ -24,6 +24,8 @@ export default async function handler(req, res) {
           condominium_id,
           condominium_name,
           unit_label,
+          fee_due_rule,
+          fee_due_day,
           case
             when current_status = 'overdue' then 'overdue'
             else 'paid'
@@ -102,6 +104,8 @@ export default async function handler(req, res) {
         district: row.district,
         units: Number(row.units_count),
         feeCents: Number(row.average_fee_cents),
+        feeDueRule: row.fee_due_rule || "business_day",
+        feeDueDay: Number(row.fee_due_day || 5),
       })),
       residents: residents.map((row) => ({
         id: row.id,
@@ -111,6 +115,8 @@ export default async function handler(req, res) {
         condoId: row.condominium_id,
         condoName: row.condominium_name,
         unit: row.unit_label,
+        feeDueRule: row.fee_due_rule || "business_day",
+        feeDueDay: Number(row.fee_due_day || 5),
         status: row.status,
         amountCents: Number(row.current_amount_cents),
         days: Number(row.current_days_overdue),

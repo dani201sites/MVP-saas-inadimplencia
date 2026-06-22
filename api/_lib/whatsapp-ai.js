@@ -29,7 +29,70 @@ function getSaoPauloDateParts(value = new Date()) {
   return {
     iso: `${map.year}-${map.month}-${map.day}`,
     label: `${map.day}/${map.month}/${map.year}`,
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
   };
+}
+
+function formatIsoDateToPtBr(isoDate) {
+  if (!isoDate) {
+    return "não informada";
+  }
+
+  const [year, month, day] = String(isoDate).slice(0, 10).split("-");
+
+  return year && month && day ? `${day}/${month}/${year}` : "não informada";
+}
+
+function getBusinessDayIso(year, month, businessDay) {
+  let count = 0;
+
+  for (let day = 1; day <= 31; day += 1) {
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    if (date.getUTCMonth() !== month - 1) {
+      break;
+    }
+
+    const weekDay = date.getUTCDay();
+
+    if (weekDay === 0 || weekDay === 6) {
+      continue;
+    }
+
+    count += 1;
+
+    if (count === businessDay) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  return null;
+}
+
+function getCalendarDayIso(year, month, calendarDay) {
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const safeDay = Math.min(Math.max(Number(calendarDay || 1), 1), lastDay);
+
+  return new Date(Date.UTC(year, month - 1, safeDay)).toISOString().slice(0, 10);
+}
+
+function getComputedDueDateIso(message) {
+  if (message.due_date) {
+    return message.due_date instanceof Date
+      ? getSaoPauloDateParts(message.due_date).iso
+      : String(message.due_date).slice(0, 10);
+  }
+
+  const today = getSaoPauloDateParts();
+  const dueDay = Number(message.fee_due_day || 5);
+
+  if (message.fee_due_rule === "calendar_day") {
+    return getCalendarDayIso(today.year, today.month, dueDay);
+  }
+
+  return getBusinessDayIso(today.year, today.month, dueDay);
 }
 
 function getDateDiffInDays(fromIsoDate, toIsoDate) {
@@ -105,7 +168,9 @@ async function loadMessageContext(sql, messageId, conversationId) {
       vp.current_status,
       vp.current_days_overdue,
       vp.current_amount_cents,
-      vp.due_date
+      vp.due_date,
+      vp.fee_due_rule,
+      vp.fee_due_day
     from whatsapp_conversation_messages wcm
     join whatsapp_conversations wc on wc.id = wcm.conversation_id
     left join residents r on r.id = wcm.resident_id
@@ -133,8 +198,9 @@ async function loadMessageContext(sql, messageId, conversationId) {
 function buildPrompt({ message, recentMessages, mode }) {
   const residentName = message.full_name || message.contact_name || "condômino não identificado";
   const amount = centsToCurrency(message.current_amount_cents);
-  const dueDate = message.due_date ? new Date(message.due_date).toLocaleDateString("pt-BR") : "não informada";
-  const dueDateContext = getDueDateContext(message.due_date);
+  const computedDueDateIso = getComputedDueDateIso(message);
+  const dueDate = formatIsoDateToPtBr(computedDueDateIso);
+  const dueDateContext = getDueDateContext(computedDueDateIso);
   const history = recentMessages
     .map((item) => `${item.direction}/${item.origin}: ${item.body}`)
     .join("\n")
@@ -170,6 +236,10 @@ function buildPrompt({ message, recentMessages, mode }) {
           dias_em_atraso: message.current_days_overdue ?? null,
           valor_atual: amount,
           vencimento: dueDate,
+          regra_vencimento_condominio: {
+            tipo: message.fee_due_rule || "business_day",
+            dia: Number(message.fee_due_day || 5),
+          },
           contexto_temporal: dueDateContext,
         },
         historico_recente: history,
@@ -183,6 +253,8 @@ function buildPrompt({ message, recentMessages, mode }) {
           "Se o condômino contestar uma data ou valor, compare com os dados do sistema antes de responder.",
           "Só reconheça erro se os dados do sistema confirmarem erro ou imprecisão anterior; se apenas faltou contexto, esclareça sem pedir desculpas em excesso.",
           "Se houver conflito que os dados do sistema não comprovem, marque handoff_required como true.",
+          "Se o histórico recente já contém uma saudação sua, não cumprimente novamente; responda de forma direta e natural.",
+          "Se pedirem boleto, link ou segunda via, não invente link nem diga que enviou; explique que vai encaminhar para o responsável ou oriente contato humano.",
           "Evite repetir literalmente a resposta anterior quando o histórico já contém a mesma informação.",
           "Não diga que baixou cobrança, removeu multa ou confirmou pagamento.",
         ],

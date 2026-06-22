@@ -196,6 +196,12 @@ form button:disabled {
   gap: 10px;
 }
 
+.inline-fields {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(92px, 0.45fr);
+  gap: 10px;
+}
+
 .logout-button {
   width: 100%;
   color: var(--danger);

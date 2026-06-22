@@ -336,6 +336,16 @@ Na ausência de retorno, o condomínio poderá adotar as medidas judiciais cabí
                   Taxa média
                   <input id="condoFee" type="number" min="1" value="620" required />
                 </label>
+                <label>
+                  Vencimento de Taxa Condominial
+                  <div class="inline-fields">
+                    <select id="condoFeeDueRule" aria-label="Tipo de vencimento">
+                      <option value="business_day">Dia útil</option>
+                      <option value="calendar_day">Dia fixo</option>
+                    </select>
+                    <input id="condoFeeDueDay" type="number" min="1" max="22" value="5" aria-label="Dia do vencimento" required />
+                  </div>
+                </label>
                 <div class="form-actions">
                   <button id="condoSubmitButton" type="submit">Adicionar condomínio</button>
                   <button id="condoCancelEditButton" class="ghost-button is-hidden" type="button">Cancelar edição</button>
@@ -429,6 +439,7 @@ Na ausência de retorno, o condomínio poderá adotar as medidas judiciais cabí
                       <th>Contato</th>
                       <th>Status</th>
                       <th>Mensalidade</th>
+                      <th>Vencimento</th>
                       <th>Ações</th>
                     </tr>
                   </thead>

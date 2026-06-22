@@ -47,6 +47,7 @@ O sistema deve ajudar administradoras a:
 - Condominios e condominos podem ser cadastrados e editados.
 - Condominios podem ser visualizados por filtro operacional.
 - Condominios possuem nome, bairro/regiao, quantidade de unidades e taxa media.
+- Condominios possuem regra de vencimento da taxa condominial, com padrao de `5º dia util`.
 - Condominos possuem condominio, unidade, status, mensalidade, e-mail e telefone.
 - O historico de mensagens registra status e destinatario quando disponivel.
 - A aba `Configurações > Cobranças de teste` envia testes reais por e-mail ou WhatsApp, usando um condômino base para contexto e um destinatário manual.
@@ -63,6 +64,7 @@ O sistema deve ajudar administradoras a:
 - A vinculacao por telefone considera a variacao brasileira com e sem o nono digito apos o DDD.
 - A resposta automatica da IA pode ser liberada por `OPENROUTER_AI_AUTOREPLY_ENABLED=true`, respeitando confianca minima e bloqueios de seguranca.
 - O backend calcula a data atual em `America/Sao_Paulo` e envia contexto temporal para a IA comparar vencimento, atraso e contestacoes do condomino.
+- Quando a conversa nao possui fatura com `due_date`, a IA deve usar a regra de vencimento do condominio para calcular o vencimento do mes atual.
 - O webhook deve ignorar payloads de status do WhatsApp, especialmente `status@broadcast`, para evitar que publicacoes de status entrem como conversa privada ou acionem IA.
 
 ## Regra critica sobre arquitetura

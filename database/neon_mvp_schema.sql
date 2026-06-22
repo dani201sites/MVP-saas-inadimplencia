@@ -78,11 +78,20 @@ create table if not exists condominiums (
   district text not null,
   units_count integer not null check (units_count > 0),
   average_fee_cents integer not null check (average_fee_cents >= 0),
+  fee_due_rule text not null default 'business_day',
+  fee_due_day integer not null default 5,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint condominiums_name_key unique (name),
-  constraint condominiums_slug_key unique (slug)
+  constraint condominiums_slug_key unique (slug),
+  constraint condominiums_fee_due_rule_check
+    check (fee_due_rule in ('calendar_day', 'business_day')),
+  constraint condominiums_fee_due_day_check
+    check (
+      (fee_due_rule = 'calendar_day' and fee_due_day between 1 and 31)
+      or (fee_due_rule = 'business_day' and fee_due_day between 1 and 22)
+    )
 );
 
 create table if not exists residents (
@@ -243,7 +252,9 @@ select
   coalesce(rb.amount_cents, r.monthly_fee_cents) as current_amount_cents,
   rb.reference_month,
   rb.due_date,
-  rb.stage
+  rb.stage,
+  c.fee_due_rule,
+  c.fee_due_day
 from residents r
 join condominiums c on c.id = r.condominium_id
 left join ranked_billing rb

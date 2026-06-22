@@ -106,6 +106,12 @@ function getChannelLabel(channel) {
   return "SMS";
 }
 
+function getFeeDueLabel(rule = "business_day", day = 5) {
+  const normalizedDay = Number(day || 5);
+
+  return rule === "calendar_day" ? `Dia ${normalizedDay}` : `${normalizedDay}º dia útil`;
+}
+
 function getAgentStatusLabel(status) {
   return status === "paused" ? "Pausado" : "Ativo";
 }
@@ -640,6 +646,7 @@ function renderCondos() {
             <span class="pill">${condo.units} unidades</span>
           </div>
           <p>${escapeHtml(condo.district)} - taxa média ${currency.format(fromCents(condo.feeCents))}</p>
+          <small>Vencimento: ${escapeHtml(getFeeDueLabel(condo.feeDueRule, condo.feeDueDay))}</small>
           <small>${residents.length} condôminos cadastrados, ${overdue.length} em atraso</small>
           <div class="card-actions">
             <button class="ghost-button" type="button" data-condo-view="${escapeHtml(condo.id)}">Ver operação</button>
@@ -665,7 +672,7 @@ function renderResidents() {
   if (!residents.length) {
     $("#residentTable").innerHTML = `
       <tr>
-        <td colspan="7">
+        <td colspan="8">
           <div class="empty-state table-empty">
             <strong>Nenhum condômino encontrado.</strong>
             <p>Ajuste os filtros ou cadastre um novo condômino.</p>
@@ -686,6 +693,7 @@ function renderResidents() {
           <td data-label="Contato">${escapeHtml(resident.email || resident.phone || "Sem contato")}</td>
           <td data-label="Status"><span class="pill ${resident.status === "overdue" ? "danger" : ""}">${resident.status === "paid" ? "Adimplente" : "Inadimplente"}</span></td>
           <td data-label="Mensalidade">${currency.format(fromCents(resident.amountCents))}</td>
+          <td data-label="Vencimento">${escapeHtml(getFeeDueLabel(resident.feeDueRule, resident.feeDueDay))}</td>
           <td data-label="Ações"><button class="ghost-button table-action" type="button" data-resident-edit="${escapeHtml(resident.id)}">Editar</button></td>
         </tr>
       `,
@@ -794,6 +802,9 @@ function resetCondoForm() {
   $("#condoForm").reset();
   $("#condoUnits").value = 80;
   $("#condoFee").value = 620;
+  $("#condoFeeDueRule").value = "business_day";
+  $("#condoFeeDueDay").value = 5;
+  $("#condoFeeDueDay").max = 22;
   $("#condoSubmitButton").textContent = "Adicionar condomínio";
   $("#condoCancelEditButton").classList.add("is-hidden");
 }
@@ -825,6 +836,9 @@ function startCondoEdit(condoId) {
   $("#condoDistrict").value = condo.district;
   $("#condoUnits").value = condo.units;
   $("#condoFee").value = fromCents(condo.feeCents);
+  $("#condoFeeDueRule").value = condo.feeDueRule || "business_day";
+  $("#condoFeeDueDay").value = condo.feeDueDay || 5;
+  $("#condoFeeDueDay").max = $("#condoFeeDueRule").value === "business_day" ? 22 : 31;
   $("#condoSubmitButton").textContent = "Salvar condomínio";
   $("#condoCancelEditButton").classList.remove("is-hidden");
   setView("condos");
@@ -977,6 +991,16 @@ $("#condoFilter").addEventListener("change", (event) => {
 $("#residentStatusFilter").addEventListener("change", (event) => {
   state.selectedResidentStatus = event.target.value;
   renderResidents();
+});
+
+$("#condoFeeDueRule").addEventListener("change", (event) => {
+  const max = event.target.value === "business_day" ? 22 : 31;
+  const input = $("#condoFeeDueDay");
+  input.max = max;
+
+  if (Number(input.value) > max) {
+    input.value = max;
+  }
 });
 
 $("#agentChannel").addEventListener("change", (event) => {
@@ -1188,6 +1212,8 @@ $("#condoForm").addEventListener("submit", async (event) => {
         district: $("#condoDistrict").value.trim(),
         units: Number($("#condoUnits").value),
         fee: Number($("#condoFee").value),
+        feeDueRule: $("#condoFeeDueRule").value,
+        feeDueDay: Number($("#condoFeeDueDay").value),
       }),
     });
 
